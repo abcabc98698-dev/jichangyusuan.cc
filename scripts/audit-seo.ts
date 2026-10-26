@@ -159,6 +159,11 @@ export async function runAudit() {
       try {
         const json = JSON.parse(sm[1]);
         if (json['@type']) schemaTypes.push(json['@type']);
+        if (Array.isArray(json['@graph'])) {
+          for (const item of json['@graph']) {
+            if (item['@type']) schemaTypes.push(item['@type']);
+          }
+        }
       } catch (e) {
         schemaTypes.push('INVALID_JSON');
       }

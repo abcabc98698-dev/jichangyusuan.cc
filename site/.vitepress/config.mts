@@ -142,16 +142,61 @@ export default defineConfig({
       .replace(/\.md$/, '')
       .replace(/\/+$/, '');
     const canonicalUrl = `https://jichangyusuan.cc/${cleanPath ? `${cleanPath}/` : ''}`;
+    const pageTitle = pageData.title ? `${pageData.title} ｜ 机场预算` : '机场预算 ｜ 月付年付费用计算与套餐选择';
+    const pageDesc = pageData.description || '机场预算：客观透明的月付年付费用精算、网关损耗模型与避坑知识库。';
+
+    const segments = cleanPath ? cleanPath.split('/').filter(Boolean) : [];
+    const isArticle = segments.length > 1;
+    const isCategory = segments.length === 1;
+    const primarySeg = segments[0] || '';
+    const primaryTitle = PRIMARY_NAME_MAP[primarySeg] || primarySeg;
 
     const headTags: any[] = [
       ['link', { rel: 'canonical', href: canonicalUrl }],
+      ['meta', { name: 'robots', content: 'index, follow' }],
       ['meta', { property: 'og:url', content: canonicalUrl }],
-      ['meta', { property: 'og:title', content: `${pageData.title || '机场预算'} ｜ 机场预算` }],
-      ['meta', { property: 'og:description', content: pageData.description || '机场预算：月付年付费用计算与套餐选择' }]
+      ['meta', { property: 'og:title', content: pageTitle }],
+      ['meta', { property: 'og:description', content: pageDesc }],
+      ['meta', { property: 'og:site_name', content: '机场预算' }],
+      ['meta', { property: 'og:locale', content: 'zh_CN' }],
+      ['meta', { property: 'og:type', content: isArticle ? 'article' : 'website' }],
+      ['meta', { property: 'og:image', content: 'https://jichangyusuan.cc/avatar.jpg' }],
+      ['meta', { name: 'twitter:card', content: 'summary_large_image' }],
+      ['meta', { name: 'twitter:title', content: pageTitle }],
+      ['meta', { name: 'twitter:description', content: pageDesc }],
+      ['meta', { name: 'twitter:image', content: 'https://jichangyusuan.cc/avatar.jpg' }]
     ];
 
+    // 文章专属元数据
+    if (isArticle) {
+      headTags.push(
+        ['meta', { property: 'article:published_time', content: '2026-10-26T00:00:00+08:00' }],
+        ['meta', { property: 'article:modified_time', content: new Date().toISOString() }],
+        ['meta', { property: 'article:author', content: 'https://jichangyusuan.cc/about/' }],
+        ['meta', { property: 'article:section', content: primaryTitle }]
+      );
+    }
+
+    // 搜索引擎验证代码安全预留（支持环境变量注入，若未配置则静默略过）
+    const googleVerification = process.env.GOOGLE_SITE_VERIFICATION || '';
+    const bingVerification = process.env.BING_SITE_VERIFICATION || '';
+    const shenmaVerification = process.env.SHENMA_SITE_VERIFICATION || '';
+    const baiduVerification = process.env.BAIDU_SITE_VERIFICATION || '';
+
+    if (googleVerification) {
+      headTags.push(['meta', { name: 'google-site-verification', content: googleVerification }]);
+    }
+    if (bingVerification) {
+      headTags.push(['meta', { name: 'msvalidate.01', content: bingVerification }]);
+    }
+    if (shenmaVerification) {
+      headTags.push(['meta', { name: 'shenma-site-verification', content: shenmaVerification }]);
+    }
+    if (baiduVerification) {
+      headTags.push(['meta', { name: 'baidu-site-verification', content: baiduVerification }]);
+    }
+
     // 1. BreadcrumbList 结构化数据
-    const segments = cleanPath ? cleanPath.split('/').filter(Boolean) : [];
     const breadcrumbItems: any[] = [
       {
         '@type': 'ListItem',
@@ -162,8 +207,6 @@ export default defineConfig({
     ];
 
     if (segments.length > 0) {
-      const primarySeg = segments[0];
-      const primaryTitle = PRIMARY_NAME_MAP[primarySeg] || primarySeg;
       breadcrumbItems.push({
         '@type': 'ListItem',
         position: 2,
@@ -217,8 +260,22 @@ export default defineConfig({
         ]
       };
       headTags.push(['script', { type: 'application/ld+json' }, JSON.stringify(orgAndWebSiteSchema)]);
+    } else if (isCategory) {
+      // 3. 栏目专题聚合页添加 CollectionPage 结构化数据
+      const collectionSchema = {
+        '@context': 'https://schema.org',
+        '@type': 'CollectionPage',
+        name: pageData.title || primaryTitle,
+        description: pageData.description || `${primaryTitle} - 机场预算专题汇总与费用模型`,
+        url: canonicalUrl,
+        isPartOf: {
+          '@type': 'WebSite',
+          '@id': 'https://jichangyusuan.cc/#website'
+        }
+      };
+      headTags.push(['script', { type: 'application/ld+json' }, JSON.stringify(collectionSchema)]);
     } else {
-      // 3. 内容与专题页面添加 TechArticle 结构化数据
+      // 4. 正式长尾深度文章添加 TechArticle 结构化数据
       const articleSchema = {
         '@context': 'https://schema.org',
         '@type': 'TechArticle',

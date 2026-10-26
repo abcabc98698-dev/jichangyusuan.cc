@@ -52,8 +52,11 @@
   "schema": {
     "schemaUsage": {
       "BreadcrumbList": 565,
-      "TechArticle": 564,
-      "FAQPage": 559
+      "CollectionPage": 18,
+      "TechArticle": 546,
+      "FAQPage": 546,
+      "Organization": 1,
+      "WebSite": 1
     },
     "pagesWithSchemaCount": 565
   },
