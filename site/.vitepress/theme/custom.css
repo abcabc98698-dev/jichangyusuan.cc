@@ -24,83 +24,179 @@
 body {
   background-color: var(--vp-c-bg);
   color: var(--vp-c-text-1);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 .VPDoc {
-  padding-bottom: 3rem;
+  padding-bottom: 3.5rem;
 }
 
 /* 标题层次与可读性 */
 .vp-doc h1 {
-  font-size: 2rem;
+  font-size: 2.15rem;
   font-weight: 800;
   color: #0f172a;
-  margin-top: 1rem;
-  margin-bottom: 1.25rem;
-  letter-spacing: -0.02em;
+  margin-top: 1.25rem;
+  margin-bottom: 1.35rem;
+  letter-spacing: -0.025em;
+  line-height: 1.35;
 }
 
 .vp-doc h2 {
   font-size: 1.45rem;
   font-weight: 700;
   color: #1e293b;
-  margin-top: 2.25rem;
-  margin-bottom: 1rem;
-  border-bottom: 1px solid #e2e8f0;
-  padding-bottom: 0.4rem;
+  margin-top: 2.75rem;
+  margin-bottom: 1.15rem;
+  border-bottom: 2px solid #e2e8f0;
+  padding-bottom: 0.5rem;
+  letter-spacing: -0.015em;
 }
 
 .vp-doc h3 {
   font-size: 1.15rem;
-  font-weight: 600;
+  font-weight: 700;
+  color: #1e293b;
+  margin-top: 2rem;
+  margin-bottom: 0.85rem;
+}
+
+.vp-doc h4 {
+  font-size: 1rem;
+  font-weight: 700;
   color: #334155;
-  margin-top: 1.75rem;
-  margin-bottom: 0.75rem;
+  margin-top: 1.5rem;
+  margin-bottom: 0.5rem;
 }
 
 .vp-doc p, .vp-doc li {
-  line-height: 1.75;
+  font-size: 0.965rem;
+  line-height: 1.82;
   color: #334155;
+  margin: 1.1rem 0;
+  letter-spacing: 0.005em;
 }
 
-/* 强调表格层次，仿 Numbers 简洁报表 */
+.vp-doc strong {
+  color: #0f172a;
+  font-weight: 700;
+}
+
+.vp-doc hr {
+  margin: 2.5rem 0;
+  border: none;
+  border-top: 1px solid #e2e8f0;
+}
+
+/* 工业级响应式表格（移动端平滑滚动与精致边框） */
 .vp-doc table {
   width: 100%;
-  display: table;
-  border-collapse: collapse;
-  margin: 1.5rem 0;
+  display: block;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  border-collapse: separate;
+  border-spacing: 0;
+  margin: 1.75rem 0;
   font-size: 0.875rem;
   border: 1px solid #e2e8f0;
-  border-radius: 6px;
-  overflow: hidden;
+  border-radius: 8px;
+  background: #ffffff;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
+}
+
+.vp-doc thead {
+  background: #f8fafc;
 }
 
 .vp-doc th {
   background: #f8fafc;
   color: #1e293b;
-  font-weight: 600;
-  padding: 0.65rem 0.85rem;
-  border: 1px solid #e2e8f0;
+  font-weight: 700;
+  padding: 0.75rem 1rem;
+  border-bottom: 2px solid #e2e8f0;
+  border-right: 1px solid #f1f5f9;
   text-align: left;
+  white-space: nowrap;
+}
+
+.vp-doc th:last-child {
+  border-right: none;
 }
 
 .vp-doc td {
-  padding: 0.65rem 0.85rem;
-  border: 1px solid #f1f5f9;
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid #f1f5f9;
+  border-right: 1px solid #f8fafc;
   color: #334155;
+  line-height: 1.6;
 }
 
-.vp-doc tr:nth-child(2n) {
+.vp-doc td:last-child {
+  border-right: none;
+}
+
+.vp-doc tr:last-child td {
+  border-bottom: none;
+}
+
+.vp-doc tbody tr:nth-child(2n) {
   background-color: #fafcff;
 }
 
+.vp-doc tbody tr:hover {
+  background-color: #f1f5f9;
+}
+
+/* 引用块设计（高亮警示条） */
 .vp-doc blockquote {
   border-left: 4px solid #0284c7;
   background: #f0f9ff;
-  color: #334155;
-  padding: 0.75rem 1.25rem;
-  border-radius: 0 6px 6px 0;
+  color: #1e293b;
+  padding: 0.85rem 1.35rem;
+  border-radius: 0 8px 8px 0;
+  margin: 1.5rem 0;
+  font-size: 0.925rem;
+}
+
+.vp-doc blockquote p {
+  margin: 0.35rem 0;
+  color: #1e293b;
+}
+
+/* 代码块与算式推导块精致化 */
+.vp-doc pre {
+  background: #0f172a !important;
+  border-radius: 8px;
+  padding: 1rem 1.25rem;
+  border: 1px solid #334155;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+}
+
+.vp-doc :not(pre) > code {
+  background: #f1f5f9;
+  color: #0284c7;
+  padding: 0.2rem 0.45rem;
+  border-radius: 4px;
+  font-size: 0.875em;
+  font-weight: 600;
+  border: 1px solid #e2e8f0;
+}
+
+/* 算式与推导高亮卡片 */
+.math-formula-box {
+  background: #f8fafc;
+  border: 1px solid #cbd5e1;
+  border-left: 4px solid #0284c7;
+  border-radius: 6px;
+  padding: 0.75rem 1.15rem;
+  font-family: var(--vp-font-family-mono);
+  font-size: 0.925rem;
+  color: #0f172a;
   margin: 1.25rem 0;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
 }
 
 /* 排除非正文区域被 Pagefind 污染 */

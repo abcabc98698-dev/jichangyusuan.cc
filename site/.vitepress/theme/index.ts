@@ -18,6 +18,8 @@ import RelatedTopics from './components/RelatedTopics.vue';
 import MainSiteCTA from './components/MainSiteCTA.vue';
 import Disclosure from './components/Disclosure.vue';
 import SearchModal from './components/SearchModal.vue';
+import WorkflowSteps from './components/WorkflowSteps.vue';
+import PitfallCard from './components/PitfallCard.vue';
 
 export default {
   extends: DefaultTheme,
@@ -37,5 +39,7 @@ export default {
     app.component('MainSiteCTA', MainSiteCTA);
     app.component('Disclosure', Disclosure);
     app.component('SearchModal', SearchModal);
+    app.component('WorkflowSteps', WorkflowSteps);
+    app.component('PitfallCard', PitfallCard);
   }
 } satisfies Theme;

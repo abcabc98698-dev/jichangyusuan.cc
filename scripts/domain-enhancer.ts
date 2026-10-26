@@ -1,4 +1,4 @@
-import { DomainSpec } from './domains/types.js';
+import { DomainSpec, WorkflowStepItem, PitfallItem } from './domains/types.js';
 
 function hashSeed(str: string): number {
   let h = 2166136261;
@@ -8,12 +8,15 @@ function hashSeed(str: string): number {
   return Math.abs(h);
 }
 
-// 8 大互补分析维度的参数表与工作流库
+// 8 大互补分析维度的完整自洽配置：各具独特的判定结论、概念引言、表格、算法推导与算例
 const perspectiveConfigs = [
   // 视角 0: 首次法币实付与收银台通道摩擦
   {
     tag: '首次法币实付与收银台通道摩擦',
-    conceptGen: (t: string, c: string) => `剖析“**${t}**”的财务实质，核心必须建立在收付实现制的现金流约束之上。在所属集群《${c}》的业务范畴内，绝大多数预算超支并非源于套餐基准单价，而是由支付通道附加费（1～2元/笔）、外币清算汇损（1.5%～3%）、充值门槛截留以及新旧交替过渡期双重扣费所共同引发的隐性资本侵蚀。必须通过精确的首付测算，锁定最大不可退款风险敞口。`,
+    verdictGen: (t: string, c: string, p: number, gb: number, m: string) => 
+      `针对“${t}”，核心结论是：<strong>切忌把年付折算价当成真实月花销，买网络服务必须以“首月最低实付”控制试错敞口</strong>。在第三方收银台结账前，逐项排查网关处理费、外币汇损与最低充值门槛，把不可退款的首次本金风险严格锁死在 ¥${p}～¥${p + 15} 极限以内。`,
+    angleIntro: (t: string, c: string) => 
+      `从**现金流动性与支付收银台实付款**切入，在《${c}》的场景下，首要任务是核清支付网关手续费、跨币种汇损与不可退款敞口，拒绝任何把长期折算价混淆为当期现金支出的财务陷阱。`,
     tableTitle: (t: string) => `针对《${t}》的首次现金实付与交易摩擦审计表`,
     tableHeaders: ['财务科目', '会计性质', '发生金额区间', '计费周期', '核验方法', '风控级别'],
     tableRows: (p: number, gb: number, m: string) => [
@@ -22,33 +25,39 @@ const perspectiveConfigs = [
       ['新旧过渡冗余费', '容灾保障预算', `¥${Math.round(p * 0.5)} ~ ¥${p}`, '迁移换站时发生', '双重订阅重叠 3~7 天按日折算', '必要容灾保险支出'],
       ['平台钱包未提现余额', '预付资金质押风险', '¥10 ~ ¥50 (充值门槛差额)', '平台账户内锁死', '核实用户中心退款政策条款', '极高 (本金沉没)']
     ],
-    algorithm: (t: string, c: string, p: number, gb: number, m: string) => `[步骤一：计算首次实付现金暴露上限 Cash_Exposure]
-  │
-  ├── 1. 获取目标套餐首期全额实付款 (P = ¥${p})
-  ├── 2. 统计支付通道固定与比例费率 (Fee = ¥1.5)
-  └── 3. Cash_Exposure = P + Fee
-  │
-  ▼
-  [步骤二：对标个人月度纯闲置资金上限 (Loss_Cap)]
-  │
-  ├── 若 Cash_Exposure > Loss_Cap ➔ 坚决禁止购买长周期，强制维持入门月付
-  └── 预留迁移备用缓冲金 Backup_Fund = P × 0.5
-  │
-  ▼
-  [步骤三：设立 3 个月全周期记账审计]
-  │
-  └── Total_3M = Cash_Exposure + (P + Fee) × 2 (绝不用折算折扣代替当期现金流)`,
-    workedExample: (t: string, p: number, gb: number, m: string) => `针对《${t}》的财务现金流进行实际对账演算：
+    workflowSteps: (t: string, c: string, p: number, gb: number, m: string): WorkflowStepItem[] => [
+      {
+        name: '核算首次实付现金暴露上限 (Cash Exposure)',
+        description: `调取目标套餐首期票面实付款 (¥${p})，加入支付网关固定与比例手续费 (约 ¥1.5)，计算出首付最大现金敞口 ¥${(p + 1.5).toFixed(1)}。`,
+        action: '查看收银台最终划扣金额，拒绝任何高于票面价 10% 的通道加价'
+      },
+      {
+        name: '对标个人月度纯闲置资金上限 (Loss Cap)',
+        description: '将实付金额与个人每月可承受的完全沉没损失对比。若实付款大于该上限，坚决禁止购买长周期，强制维持入门月付。',
+        action: `预留换站备用缓冲金 ¥${Math.round(p * 0.5)}，确保随时可切备用线路`
+      },
+      {
+        name: '建立 3 个月全周期记账与对账审计',
+        description: '设立连续 90 天现金流台账，按实付金额记账，绝不用折算折扣代替当期现金流。',
+        action: '季度末复盘实际总支出，确认未产生隐性扣款或自动续订'
+      }
+    ],
+    workedExample: (t: string, p: number, gb: number, m: string) => 
+`针对《${t}》的财务现金流进行实际对账演算：
 1. 结算出账：套餐票面价 ¥${p} 元，第三方支付网关加收 ¥1.5 元处理费，首月实际划扣 **¥${(p + 1.5).toFixed(1)} 元**；
-2. 资金沉没对比：若用户受宣传误导，一次性购买了标价 ¥${p * 10} 元的年付套餐。在第 3 个月平台因机房被查封停网时，月付用户累计损失仅为 $3 \\times ${(p + 1.5).toFixed(1)} =$ **¥${((p + 1.5) * 3).toFixed(1)} 元**；
-3. 而年付用户直接产生不可逆本金损失 $${p * 10} - ((p + 1.5) * 3) =$ **¥${(p * 10 - (p + 1.5) * 3).toFixed(1)} 元**！量化数据证明，维持短期小额决策能为用户阻断绝大部分不可控违约风险。`,
-    boundaryRule: (t: string) => `现金风控红线：单次交易掏出的净现金支出严禁超过月度通信娱乐可支配闲置资金的 30%；遇到要求“最低充值金额大于当前套餐售价 1.5 倍”的平台，一律视为高危资金质押，拒绝充值。`
+2. 资金沉没对比：若用户受宣传误导，一次性购买了标价 ¥${p * 10} 元的年付套餐。在第 3 个月平台因机房被查封停网时，月付用户累计损失仅为 3 × ${(p + 1.5).toFixed(1)} = **¥${((p + 1.5) * 3).toFixed(1)} 元**；
+3. 而年付用户直接产生不可逆本金损失 ${p * 10} - ${((p + 1.5) * 3).toFixed(1)} = **¥${(p * 10 - (p + 1.5) * 3).toFixed(1)} 元**！量化数据证明，维持短期小额决策能为用户阻断绝大部分不可控违约风险。`,
+    boundaryRule: (t: string) => 
+      `现金风控红线：单次交易掏出的净现金支出严禁超过月度通信娱乐可支配闲置资金的 30%；遇到要求“最低充值金额大于当前套餐售价 1.5 倍”的平台，一律视为高危资金质押，拒绝充值。`
   },
 
   // 视角 1: 物理网络性能与晚高峰链路质量
   {
     tag: '物理网络性能与晚高峰抗拥塞',
-    conceptGen: (t: string, c: string) => `探讨“**${t}**”的技术本质，必须将重心完全置于晚高峰（20:00～23:00）的真实物理链路吞吐与抗丢包表现之上。在集群《${c}》的实际环境中，白天的空载跑分与单次突发测速并不具备工程可信度。骨干网国际出口拥塞、单线程 TCP 队头阻塞以及高倍率专线对物理容量的等比折减，才是决定最终音视频与远程办公体验的决定性变量。`,
+    verdictGen: (t: string, c: string, p: number, gb: number, m: string) => 
+      `针对“${t}”，核心结论是：<strong>绝不要在白天或凌晨测速截图里找确定性，必须在晚高峰（20:30～22:30）实测长连接丢包与单线程吞吐</strong>。只要晚高峰丢包超过 2% 或出现持续 TCP 队头阻塞，标称再大的 1000M 带宽也无法支撑 4K 秒开与跨国实时通讯。`,
+    angleIntro: (t: string, c: string) => 
+      `从**晚高峰 20:00~23:00 真实网络吞吐与抗拥塞**切入，在《${c}》的实际环境中，白天的空载跑分与单次测速均缺乏参考价值，必须紧盯骨干网国际出口拥塞与持续长连接丢包率。`,
     tableTitle: (t: string) => `针对《${t}》的晚高峰网络链路与物理吞吐审计表`,
     tableHeaders: ['链路技术指标', '物理工程定义', '行业常见宣传表象', '晚高峰拥塞真实影响', '实机测量方法', '合格基准线'],
     tableRows: (p: number, gb: number, m: string) => [
@@ -57,33 +66,40 @@ const perspectiveConfigs = [
       ['单线程持续传输速率', '单一长连接的抗抖动吞吐', '拿多线程瞬间跑分忽悠用户', '决定 4K 视频是否秒开与缓冲', '使用单线程拉取大体积真实数据流', '持续速率 > 25 Mbps'],
       ['链路往返延迟抖动', '连续数据包往返时间标准差', '只宣传极限直连几毫秒最低值', '抖动过大导致即时通讯音视频卡顿', '统计连续 50 次握手延迟离散程度', '延迟标准差抖动 < 15ms']
     ],
-    algorithm: (t: string, c: string, p: number, gb: number, m: string) => `[步骤一：执行晚高峰 (20:30~22:30) 真实网络压力采样]
-  │
-  ├── 1. 避开凌晨闲时，在晚高峰黄金拥塞时段发起连续 100 次长连接探测
-  └── 2. 记录平均丢包率 (Packet Loss) 与延迟标准差抖动 (Jitter)
-  │
-  ▼
-  [步骤二：物理有效额度与真实单价校准]
-  │
-  ├── 真实可用流量 Real_Quota = 标称流量 (${gb}GB) / 主力倍率 (${m}x) = ${(gb / parseFloat(m)).toFixed(1)} GB
-  └── 真实物理每 GB 成本 = 月费 (¥${p}) / Real_Quota = ¥${(p / (gb / parseFloat(m))).toFixed(3)}/GB
-  │
-  ▼
-  [步骤三：输出网络承载力合格判定]
-  │
-  └── 仅当丢包率 < 2% 且每 GB 物理成本符合预期时，方可通过技术验收`,
-    workedExample: (t: string, p: number, gb: number, m: string) => `针对《${t}》的物理网络性能进行实测演算：
+    workflowSteps: (t: string, c: string, p: number, gb: number, m: string): WorkflowStepItem[] => [
+      {
+        name: '执行晚高峰 (20:30~22:30) 真实网络压力采样',
+        description: '避开白天闲时，在晚高峰黄金拥塞时段发起连续 100 次长连接探测，记录平均丢包率 (Packet Loss) 与延迟抖动 (Jitter)。',
+        action: '若丢包率大于 3%，连续 2 天复测，确认为骨干拥塞后立即转备用节点'
+      },
+      {
+        name: '物理有效额度与真实单价校准',
+        description: `标称流量 (${gb}GB) 除以主力专线倍率 (${m}x)，得出真实物理可用配额仅为 ${(gb / parseFloat(m)).toFixed(1)} GB。`,
+        action: `计算每 GB 真实物理成本：¥${p} / ${(gb / parseFloat(m)).toFixed(1)}GB = ¥${(p / (gb / parseFloat(m))).toFixed(3)}/GB`
+      },
+      {
+        name: '单线程 4K 视频缓冲压力验收',
+        description: '使用单线程模式拉取流媒体视频流，观察播放器缓冲区能否在 5 秒内积攒 30 秒以上冗余。',
+        action: '缓冲区持续低于 5 秒说明链路存在隐性限速，不适合作为主用生产力工具'
+      }
+    ],
+    workedExample: (t: string, p: number, gb: number, m: string) => 
+`针对《${t}》的物理网络性能进行实测演算：
 1. 真实倍率穿透：经查该方案核心专线倍率统一设置为 **${m}x**；
-2. 实际物理传输能力核算：月度真实物理传输上限仅为 $${gb} / ${m} =$ **${(gb / parseFloat(m)).toFixed(1)} GB**；
+2. 实际物理传输能力核算：月度真实物理传输上限仅为 ${gb} / ${m} = **${(gb / parseFloat(m)).toFixed(1)} GB**；
 3. 晚高峰压测：在晚 21:00 发起 100 次长连接探测，丢包率测试为 1.2%，平均延迟 42ms，单线程持续推流达到 25Mbps；
 4. 综合结论：虽然额度因倍率缩水，但晚高峰可用率极佳，折算后每 GB 物理数据成本为 **¥${(p / (gb / parseFloat(m))).toFixed(3)} 元**，对于重视稳定性的用户而言具备极高采购价值。`,
-    boundaryRule: (t: string) => `网络技术准则：凡是晚高峰丢包率超过 8% 且持续 3 天未恢复的方案，不论标称价格多便宜，一律判定为不合格生产力工具；大流量任务必须以“标称流量除以专线倍率”作为唯一有效容量指标。`
+    boundaryRule: (t: string) => 
+      `网络技术准则：凡是晚高峰丢包率超过 8% 且持续 3 天未恢复的方案，不论标称价格多便宜，一律判定为不合格生产力工具；大流量任务必须以“标称流量除以专线倍率”作为唯一有效容量指标。`
   },
 
   // 视角 2: 软硬件生态与规则分流配置
   {
     tag: '客户端软硬件生态与分流规则',
-    conceptGen: (t: string, c: string) => `聚焦“**${t}**”的配置实操，关键在于理清自备终端环境（iOS、Android、Windows 与 macOS）对代理协议内核的支持度与规则分流效率。在集群《${c}》的场景下，开源客户端（如 Clash Verge、Sing-box）与商业买断工具（如 Shadowrocket、Surge）在本地 Fake-IP 模式解析、DNS 防投毒泄露以及进程级规则分流上存在显著差异。必须确保分流规则精准，杜绝国内大流量误走代理造成的额度浪费。`,
+    verdictGen: (t: string, c: string, p: number, gb: number, m: string) => 
+      `针对“${t}”，核心结论是：<strong>自备客户端的授权买断费用属于终身数字资产，严禁摊入日常月费中稀释单价</strong>。自建精准的分流规则集（Direct 直连与 Proxy 代理分离），避免国内软件后台自动更新与网盘同步走代理，把宝贵的高速专线额度全量留给核心任务。`,
+    angleIntro: (t: string, c: string) => 
+      `从**客户端软硬件生态与规则分流效率**切入，在《${c}》的落地配置中，必须根据自备设备操作系统（iOS/Android/Windows/Mac）配置精确的 Direct 直连规则，杜绝国内大流量误走代理造成的额度浪费。`,
     tableTitle: (t: string) => `针对《${t}》的客户端环境适配与分流防耗对照表`,
     tableHeaders: ['终端操作系统', '推荐适配客户端', '授权成本属性', '分流核心特性', '防跑漏优化手段', '配置建议'],
     tableRows: (p: number, gb: number, m: string) => [
@@ -92,33 +108,40 @@ const perspectiveConfigs = [
       ['Windows (PC 桌面)', 'Clash Verge Rev', '开源免费 (¥0)', 'Mihomo 内核与 WebUI 面板', '设置百度网盘与 Steam 走直连', '首选稳定开源现代分支'],
       ['macOS (苹果电脑)', 'Clash Verge / Surge Mac', '开源免费或独立高级商业授权', '系统代理与增强模式透明分流', '配置 Fake-IP 避免 DNS 劫持', '根据专业抓包需求选择工具']
     ],
-    algorithm: (t: string, c: string, p: number, gb: number, m: string) => `[步骤一：清点设备操作系统矩阵与自备工具]
-  │
-  ├── 1. 确认手机/平板/电脑的操作系统版本与开源工具支持
-  └── 2. 若使用 iOS 设备，确认是否已自备美区 Apple ID 并买断对应 App
-  │
-  ▼
-  [步骤二：验证自备客户端对目标订阅协议的解析能力]
-  │
-  ├── 导入测试订阅链接，核查 Shadowsocks/Vmess/Trojan 节点是否完整下发
-  └── 检查分流规则集，确保国内常用软件 (Direct) 走直连不浪费代理流量
-  │
-  ▼
-  [步骤三：配置多设备并发保活与防踢线策略]
-  │
-  └── 核实账号允许的同时在线设备数 (≥ 2 台)，避免多端并发被风控封锁`,
-    workedExample: (t: string, p: number, gb: number, m: string) => `针对《${t}》的软硬件配置进行成本与分流优化演算：
-1. 软件端支出精算：Windows 下载开源免费的 Clash Verge Rev（支出 0 元）；iPhone 需在美区 App Store 独立购买 Shadowrocket（支出 $2.99 约合人民币 ¥22 元）；
+    workflowSteps: (t: string, c: string, p: number, gb: number, m: string): WorkflowStepItem[] => [
+      {
+        name: '清点设备操作系统矩阵与自备工具',
+        description: '确认手机、平板与电脑的操作系统版本与开源工具支持；若使用 iOS 设备，确认是否已自备美区 Apple ID 并买断对应 App。',
+        action: '切勿通过机场提供的共享 Apple ID 下载闭源定制客户端，防范账号被锁风险'
+      },
+      {
+        name: '验证自备客户端对目标订阅协议的解析能力',
+        description: '导入测试订阅链接，核查 Shadowsocks/Vmess/Trojan 节点是否完整下发，验证分流规则集 (Direct 与 Proxy 分流)。',
+        action: '检查分流规则，确保微信、百度网盘、Steam 等大流量服务走 Direct 直连'
+      },
+      {
+        name: '配置多设备并发保活与防踢线策略',
+        description: `核实账号允许的同时在线设备数 (通常 ≥ 2 台)，合理分配手机与电脑的同时连接会话。`,
+        action: '在路由器或客户端内设置会话保持，避免多端并发被服务商风控系统自动拉黑'
+      }
+    ],
+    workedExample: (t: string, p: number, gb: number, m: string) => 
+`针对《${t}》的软硬件配置进行成本与分流优化演算：
+1. 软件端支出精算：Windows 下载开源免费的 Clash Verge Rev（支出 ¥0 元）；iPhone 需在美区 App Store 独立购买 Shadowrocket（支出 $2.99 约合人民币 ¥22 元）；
 2. 服务端支出：选购月付 ¥${p} 元入门基础套餐；
-3. 首月合并支出：$22 + ${p} =$ **¥${p + 22} 元**。其中 ¥22 元为终身数字资产买断，次月续费支出仅需纯粹的 **¥${p} 元**；
+3. 首月合并支出：¥22 + ¥${p} = **¥${p + 22} 元**。其中 ¥22 元为终身数字资产买断，次月续费支出仅需纯粹的 **¥${p} 元**；
 4. 规则优化成效：通过在客户端中配置国内应用直连规则，次月原本计划消耗的 ${gb}GB 流量被成功节约了 35%，实现了工具与资费的最佳协同。`,
-    boundaryRule: (t: string) => `客户端生态准则：第三方商业客户端授权买断费应严格单独立项，严禁摊入日常月费；任何需要强制用户安装未经开源代码审计的专有闭源安装包的平台，在安全审计中一票否决。`
+    boundaryRule: (t: string) => 
+      `客户端生态准则：第三方商业客户端授权买断费应严格单独立项，严禁摊入日常月费；任何需要强制用户安装未经开源代码审计的专有闭源安装包的平台，在安全审计中一票否决。`
   },
 
-  // 视角 3: 契约生命周期与争议退款维权
+  // 视角 3: 契约生命周期与争议退款退出
   {
     tag: '契约生命周期与争议退款退出',
-    conceptGen: (t: string, c: string) => `围绕“**${t}**”的治理机制，核心在于建立完整的全生命周期退出与维权屏障。在集群《${c}》的实际使用中，网络服务受机房光缆变动与运营团队变更影响极大，任何长周期承诺均包含不可知风险。必须核清服务协议（ToS）中的退款折算条件、老用户续费价格锁定协议、以及新旧服务换站交接时的冗余过渡成本，确保在遭遇重大网络故障时具备可逆的抗辩主动权。`,
+    verdictGen: (t: string, c: string, p: number, gb: number, m: string) => 
+      `针对“${t}”，核心结论是：<strong>虚拟代理服务不具备长期资产保值属性，任何中途退款几乎都会按月付原价扣除残值并加收手续费</strong>。在完成连续 3 个完整账单周期的稳定性验证前，绝不盲目跳入年付长周期，做好随时以零迁移成本切换备用节点的方案。`,
+    angleIntro: (t: string, c: string) => 
+      `从**服务生命周期退出与争议折旧维权**切入，在《${c}》的履约周期中，必须提前理清服务协议 (ToS) 中的退款门槛与换站迁移成本，避免在遭遇重大网络故障时陷入本金沉没的被动境地。`,
     tableTitle: (t: string) => `针对《${t}》的服务生命周期与退款维权核验表`,
     tableHeaders: ['契约生命周期阶段', '合规达标标准', '常见霸王条款陷阱', '潜在权益受损表现', '核验与维权方法', '风控对策'],
     tableRows: (p: number, gb: number, m: string) => [
@@ -127,35 +150,42 @@ const perspectiveConfigs = [
       ['周期中途换站迁移', '提供平稳过渡期，按天折算残值', '中途退出扣除全款或注销账号', '资金完全沉没于老平台', '计算双重订阅重叠 3~5 天费用', '新服务达标后再停用老服务'],
       ['老用户续费锁定', '维持首期相同的原价续费权益', '首期特价到期后续费无预警翻倍', '次年账单突然翻倍造成超支', '核查后台下期账单应付金额', '涨价幅度超 20% 坚决换站']
     ],
-    algorithm: (t: string, c: string, p: number, gb: number, m: string) => `[步骤一：设立服务到期与状态监测预警]
-  │
-  ├── 1. 记录当期服务到期前 7 天日历提醒，检查下期续费账单是否暗中涨价
-  └── 2. 核实用户中心是否已关闭未经授权的第三方免密自动代扣
-  │
-  ▼
-  [步骤二：执行换站迁移双重订阅无缝交接]
-  │
-  ├── 在新旧两家服务重叠的 3~5 天内，将新订阅作为备份节点并行接入
-  └── 晚高峰测试新服务完全达标后，停止对旧服务续购，实现零断网交接
-  │
-  ▼
-  [步骤三：启动争议抗辩与证据保全流]
-  │
-  └── 若遇服务商单方面跑路或大面积故障，调取支付流水号向支付机构发起申诉`,
-    workedExample: (t: string, p: number, gb: number, m: string) => `针对《${t}》的退出与维权进行实操演算：
-1. 残值与损失测算：某半年付套餐总金额 ¥${p * 5} 元（总周期 180 天），在第 90 天时平台核心专线被拔线且不予修复，剩余未消费残值折算为 $(${p * 5} / 180) \\times 90 =$ **¥${((p * 5) / 2).toFixed(1)} 元**；
+    workflowSteps: (t: string, c: string, p: number, gb: number, m: string): WorkflowStepItem[] => [
+      {
+        name: '设立服务到期与状态监测预警',
+        description: '记录当期服务到期前 7 天日历提醒，检查下期续费账单是否暗中涨价，核实是否已关闭未经授权的免密自动扣款。',
+        action: '在第三方支付应用中主动解约代扣协议，拒绝一切静默续订'
+      },
+      {
+        name: '执行换站迁移双重订阅无缝交接',
+        description: '在新旧两家服务重叠的 3~5 天内，将新订阅作为备份节点并行接入；晚高峰测试新服务完全达标后，停止对旧服务续费。',
+        action: '双重订阅成本通常控制在 ¥10 以内，属于极高性价比的容灾保费'
+      },
+      {
+        name: '启动争议抗辩与证据保全流',
+        description: '若遇服务商单方面失联或大面积故障，调取带时间戳的节点超时截图与支付流水号，向支付网关发起交易不符申诉。',
+        action: '保全工单往来记录与官方群公告截图作为第三方申诉依据'
+      }
+    ],
+    workedExample: (t: string, p: number, gb: number, m: string) => 
+`针对《${t}》的退出与维权进行实操演算：
+1. 残值与损失测算：某半年付套餐总金额 ¥${p * 5} 元（总周期 180 天），在第 90 天时平台核心专线被拔线且不予修复，剩余未消费残值折算为 (¥${p * 5} / 180) × 90 = **¥${((p * 5) / 2).toFixed(1)} 元**；
 2. 退出行动执行：
    - 提取过去 48 小时全部节点超时的 Ping 测试日志并截屏保全；
    - 在平台工单系统提交正式退款申请，要求退还剩余残值；
    - 无论客服是否同意，立即在微信/支付宝中解约该平台的自动扣款授权，并花费 ¥${p} 元在主站推荐榜单中平稳采购新的真月付备用方案；
-3. 维权收益：通过果断启动退出流程，用户保全了后续数月的核心网络通信，避免了在死服务上耗费更多精力。`,
-    boundaryRule: (t: string) => `退出保障准则：若平台在发生持续 48 小时以上全网断流时拒绝提供补时或退还残值，用户应立即停止任何后续充值并向收单网关发起交易不符投诉；换站迁移重叠冗余成本不得超过单月套餐的 50%。`
+3. 维权收益：通过果断启动退出流程，用户保全了后续数月的核心网络通信，避免了在失效服务上耗费更多精力。`,
+    boundaryRule: (t: string) => 
+      `退出保障准则：若平台在发生持续 48 小时以上全网断流时拒绝提供补时或退还残值，用户应立即停止任何后续充值并向收单网关发起交易不符投诉；换站迁移重叠冗余成本不得超过单月套餐的 50%。`
   },
 
   // 视角 4: 30天滚动与自然月日历时间漂移
   {
     tag: '30天滚动与自然月日历时间漂移',
-    conceptGen: (t: string, c: string) => `解析“**${t}**”的关键，在于识别“自然日历月份”与“服务器 30 天严格计时”之间的财务时间剪刀差。在集群《${c}》的计费模型下，公历一年有 365 天，若按 30 天一个周期循环出账，全年实际产生 12.167 次账单扣款；每个月的付款日会不可逆地向前提前 1～2 天。若未看清计费模式，不仅会导致当期预算与工资发放日产生脱节，整年维度还会凭空多交半个月的套餐资费。`,
+    verdictGen: (t: string, c: string, p: number, gb: number, m: string) => 
+      `针对“${t}”，核心结论是：<strong>流量预算超支多半发生在后半月，避免月初因‘流量焦虑’超额购买大套餐</strong>。以基准用量包打底，结合月中实际消耗率选择弹性加油包或按需平滑升档，能为个人或小团队挤出至少 30%～40% 的沉没结余。`,
+    angleIntro: (t: string, c: string) => 
+      `从**公历自然月与 30 天严格计时的时间剪刀差**切入，在《${c}》的账期循环中，必须防范付款日逐月提前带来的隐性年化超支，合理利用节假日断档反向抹平计费天数损耗。`,
     tableTitle: (t: string) => `针对《${t}》的 30 天与自然月计费模式对照表`,
     tableHeaders: ['对比维度', '按自然月计费 (Calendar Month)', '按 30 天计费 (30-Day Cycle)', '全年财务差额', '额度清零机制', '用户对账指引'],
     tableRows: (p: number, gb: number, m: string) => [
@@ -164,32 +194,39 @@ const perspectiveConfigs = [
       ['大月天数损耗', '31 天大月享受完整天数', '大月第 31 天计入下一个周期', '相当于每年 7 个大月被各蚕食 1 天', '严格按 720 小时清零', '避免在月底最后一天首购'],
       ['二月特殊情况', '平年 28 天仍收全月资费', '二月依然享受满 30 天服务', '二月份稍微挽回部分差额', '无特殊清零例外', '综合全年考量两相抵消']
     ],
-    algorithm: (t: string, c: string, p: number, gb: number, m: string) => `[步骤一：查验账单后台到期时间戳]
-  │
-  ├── 1. 记录初始购买激活时间 (如 2026-03-01 10:00)
-  └── 2. 查看下一期到期时间是 2026-03-31 10:00 (30天制) 还是 2026-04-01 10:00 (自然月制)
-  │
-  ▼
-  [步骤二：核算全年真实扣费频次与差额]
-  │
-  ├── 若为 30 天制：年化总支出 = 月费 (¥${p}) × (365 / 30) = ¥${(p * 12.1667).toFixed(1)}
-  └── 年化比自然月纯多支出：¥${(p * 12.1667 - p * 12).toFixed(1)} 元
-  │
-  ▼
-  [步骤三：制定利用天数漂移反向节流的策略]
-  │
-  └── 在长假或外出闲置时主动断档 3~5 天不续费，反向抹平日历剪刀差`,
-    workedExample: (t: string, p: number, gb: number, m: string) => `针对《${t}》的时间周期损耗进行实际演算：
-1. 自然月对日计费模式：全年出账 12 次，实付法币为 $12 \\times ${p} = $ **¥${p * 12} 元**；
+    workflowSteps: (t: string, c: string, p: number, gb: number, m: string): WorkflowStepItem[] => [
+      {
+        name: '查验后台账单到期时间戳与清零规则',
+        description: '记录初始激活时间，查看下期到期日是按自然月同日顺延，还是严格按 720 小时（30天）向前递减。',
+        action: '若为 30 天制，在个人日历中将账单日标记为浮动递减状态'
+      },
+      {
+        name: '核算全年真实扣费频次与差额',
+        description: `按 30 天制测算：年化总支出 = 月费 ¥${p} × (365 / 30) = ¥${(p * 12.1667).toFixed(1)} 元，年化多支出 ¥${(p * 12.1667 - p * 12).toFixed(1)} 元。`,
+        action: '把多出的 0.167 个周期资费提前列入年度通信意外备用金'
+      },
+      {
+        name: '制定利用天数漂移反向节流策略',
+        description: '在长假或外出闲置时主动断档 3~5 天不续费，重新购买时自然对齐至新周期，反向抹平日历剪刀差。',
+        action: '每年利用长假断档 1~2 次，即可完全冲销 30 天制带来的时间损耗'
+      }
+    ],
+    workedExample: (t: string, p: number, gb: number, m: string) => 
+`针对《${t}》的时间周期损耗进行实际演算：
+1. 自然月对日计费模式：全年出账 12 次，实付法币为 12 × ¥${p} = **¥${p * 12} 元**；
 2. 30 天滚动计费模式：全年产生 12.1667 次扣费，实付法币达到 **¥${(p * 12.1667).toFixed(1)} 元**；
 3. 时间漂移影响：按 30 天滚动的用户在第 12 个月尚未过完时（第 360 天），就收到了第 13 期的续费催缴通知。通过日历对齐，用户看清了这看似不起眼的 ¥${(p * 12.1667 - p * 12).toFixed(1)} 元年化差额来源。`,
-    boundaryRule: (t: string) => `周期计费准则：在两款方案标价完全相同时，优先选择按自然月对日计费的服务；对于按 30 天计时的套餐，必须将年化成本乘上 1.014 的时间校正系数。`
+    boundaryRule: (t: string) => 
+      `周期计费准则：在两款方案标价完全相同时，优先选择按自然月对日计费的服务；对于按 30 天计时的套餐，必须将年化成本乘上 1.014 的时间校正系数。`
   },
 
   // 视角 5: 专线倍率折减与真实物理有效容量
   {
     tag: '专线倍率折减与真实物理有效容量',
-    conceptGen: (t: string, c: string) => `关于“**${t}**”的核心命题，是拆穿“虚标大流量”背后的倍率乘数法则。在集群《${c}》的业务场景中，许多平台以“每月 1000GB 奢华大包”作为核心卖点吸引眼球，但在其节点列表中，仅有几条卡顿的直连节点标注 1.0x，所有真正能流畅看视频的晚高峰专线全部标注为 2.5x～3.0x。用户在不知不觉中以 3 倍速度被系统划扣配额，原本以为能用整月的额度十天即告告罄。必须以物理吞吐能力重估套餐价值。`,
+    verdictGen: (t: string, c: string, p: number, gb: number, m: string) => 
+      `针对“${t}”，核心结论是：<strong>警惕标称 ${gb}GB 但主力节点全为 ${m}x 倍率的数字游戏，真实物理容量会被等比稀释</strong>。用标称额度除以主力专线倍率还原真实物理 GB，再倒推每 GB 真实单价，才能真正看懂哪款套餐才是最具性价比的选项。`,
+    angleIntro: (t: string, c: string) => 
+      `从**主力专线倍率折减与真实物理有效容量**切入，在《${c}》的流量测算中，绝不能轻信虚标的大流量包，必须用标称配额除以实际倍率，还原面向核心任务的真实物理 GB 单价。`,
     tableTitle: (t: string) => `针对《${t}》的节点倍率与实际物理可用容量折算表`,
     tableHeaders: ['节点类别与线路属性', '标称计费倍率', '标称 1000GB 套餐实际物理额度', '单任务 (20GB) 实际扣除', '每 GB 真实物理单价 (按月费 ¥20)', '适用任务场景'],
     tableRows: (p: number, gb: number, m: string) => [
@@ -198,33 +235,40 @@ const perspectiveConfigs = [
       ['顶级 IPLC 内网专线', '2.5x ~ 3.5x', '285 GB ~ 400 GB (严重缩水)', '扣除 50 GB ~ 70 GB 额度', '¥0.05 ~ ¥0.07 / GB', '跨国商务会议 / 股票交易 / 极低延迟需求'],
       ['定制流媒体解锁专线', '4.0x ~ 5.0x', '200 GB ~ 250 GB (极度昂贵)', '扣除 80 GB ~ 100 GB (迅速耗尽)', '¥0.08 ~ ¥0.10 / GB', '仅适合小流量解锁特殊版权地区']
     ],
-    algorithm: (t: string, c: string, p: number, gb: number, m: string) => `[步骤一：提取目标套餐各节点梯度的真实倍率矩阵]
-  │
-  ├── 1. 记录日常直连节点倍率 (如 0.5x~1.0x)
-  └── 2. 记录晚高峰主力 BGP/IPLC 专线倍率 (${m}x)
-  │
-  ▼
-  [步骤二：计算面向核心任务的真实可用物理 GB]
-  │
-  ├── 真实可用容量 = 标称总流量 (${gb}GB) / 专线倍率 (${m}x) = ${(gb / parseFloat(m)).toFixed(1)} GB
-  └── 任务承载推演：每部 4K 电影消耗 20GB，扣费相当于消耗 ${(20 * parseFloat(m)).toFixed(1)} GB
-  │
-  ▼
-  [步骤三：评估有效单价与任务匹配度]
-  │
-  └── 若真实可用额度无法支撑月度任务 ➔ 坚决放弃，改选低倍率大包`,
-    workedExample: (t: string, p: number, gb: number, m: string) => `针对《${t}》的倍率损耗进行实际演算：
+    workflowSteps: (t: string, c: string, p: number, gb: number, m: string): WorkflowStepItem[] => [
+      {
+        name: '提取目标套餐各节点梯度的真实倍率矩阵',
+        description: `记录日常直连节点倍率 (如 0.5x~1.0x)，重点审查晚高峰主力 BGP/IPLC 专线倍率 (${m}x)。`,
+        action: '若主力晚高峰专线倍率超过 2.0x，必须提前对标称配额做折半预估'
+      },
+      {
+        name: '计算面向核心任务的真实可用物理容量',
+        description: `真实可用容量 = 标称总流量 (${gb}GB) / 专线倍率 (${m}x) = ${(gb / parseFloat(m)).toFixed(1)} GB。`,
+        action: `每部 4K 视频按 20GB 计算，在 ${m}x 倍率下实际扣除 ${(20 * parseFloat(m)).toFixed(1)} GB 配额`
+      },
+      {
+        name: '倒推每 GB 真实物理单价并做横向对标',
+        description: `真实物理单价 = 月费 ¥${p} / ${(gb / parseFloat(m)).toFixed(1)}GB = ¥${(p / (gb / parseFloat(m))).toFixed(3)}/GB。`,
+        action: '若真实单价超过 ¥0.15/GB，考虑改选以低倍率普通专线为主的稳健服务商'
+      }
+    ],
+    workedExample: (t: string, p: number, gb: number, m: string) => 
+`针对《${t}》的倍率损耗进行实际演算：
 1. 表面估算：用户每月剪辑需要传输 ${(gb * 0.7).toFixed(0)}GB 视频，以为标称 ${gb}GB 绰绰有余；
 2. 倍率刺客曝光：该套餐的香港高速专线倍率为 **${m}x**；
-3. 真实物理吞吐量：$${gb} / ${m} =$ **${(gb / parseFloat(m)).toFixed(1)} GB**！
+3. 真实物理吞吐量：${gb} / ${m} = **${(gb / parseFloat(m)).toFixed(1)} GB**！
 4. 真实结果：该套餐实际可供传输的物理数据远低于用户的 ${(gb * 0.7).toFixed(0)}GB 需求。通过倍率折算，用户在付款前及时规避了月中因断流被迫加购昂贵补充包的风险。`,
-    boundaryRule: (t: string) => `倍率核算法则：任何未在购买前明确公示主力专线倍率的套餐均视为高危套路产品；选购大流量套餐时，必须以“标称流量除以主力专线倍率”作为唯一有效容量指标。`
+    boundaryRule: (t: string) => 
+      `倍率核算法则：任何未在购买前明确公示主力专线倍率的套餐均视为高危套路产品；选购大流量套餐时，必须以“标称流量除以主力专线倍率”作为唯一有效容量指标。`
   },
 
   // 视角 6: 优惠码时效与首单一次性折扣核销
   {
     tag: '优惠码时效与首单一次性折扣核销',
-    conceptGen: (t: string, c: string) => `在深入“**${t}**”的优惠机制时，必须建立清晰的“折扣生命周期与叠加次序”模型。在集群《${c}》的营销策略中，优惠码绝非简单的减法运算，常见的有仅限新客首单的 One-off 码、次期维持折扣的 Recurring 码、以及满足门槛方能抵扣的满减券。如果不分清是“单次打折”还是“终身折扣”，次月账单突然恢复原价时将引发严重的超支危机。`,
+    verdictGen: (t: string, c: string, p: number, gb: number, m: string) => 
+      `针对“${t}”，核心结论是：<strong>首单新客大额折扣往往绑定了到期自动按原价续费的协议陷阱</strong>。扫码结账前务必核查优惠代码的生效周期是一次性还是永久有效，并在支付网关主动关闭循环扣款授权，牢牢掌握下一期的去留主动权。`,
+    angleIntro: (t: string, c: string) => 
+      `从**优惠代码循环属性 (Recurring vs One-off) 与次期续费阶梯**切入，在《${c}》的结算核销中，必须在收银台看清折扣生效周期，并在支付平台主动关闭自动代扣授权，掌握账单主动权。`,
     tableTitle: (t: string) => `针对《${t}》的折扣码属性与次期续费价格审计表`,
     tableHeaders: ['优惠代码类型', '计算公式口径', '典型适用场景', '次期续费规则', '账面水分与陷阱', '风控级别'],
     tableRows: (p: number, gb: number, m: string) => [
@@ -233,33 +277,40 @@ const perspectiveConfigs = [
       ['满减固定券 (Fixed)', 'Pay = max(0, Price - Coupon)', '满额促销 (如满百减)', '通常仅限当次订单有效', '凑单门槛迫使用户选更高档', '中 (警惕凑单浪费)'],
       ['赠送时长权益 (+Month)', 'Effective = Price / (12 + Bonus)', '长周期买一年送 N 月', '中途退款赠送月份价值归零', '只有用满全周期才有实际收益', '中 (依赖服务存续)']
     ],
-    algorithm: (t: string, c: string, p: number, gb: number, m: string) => `[步骤一：核实优惠代码的续费属性 (Recurring vs One-time)]
-  │
-  ├── 1. 在结账页输入代码，观察折扣项是否标注“循环优惠”
-  └── 2. 若为首期优惠，次期预算必须按无折扣全额原价记账
-  │
-  ▼
-  [步骤二：执行叠加次序精准演算]
-  │
-  ├── 标准次序：先扣除固定满减券，再按百分比计算折扣金额
-  └── 结账应付款 = max(0, 票面价 - 满减券) × 比例折扣率 + 网关手续费
-  │
-  ▼
-  [步骤三：计算真实年化综合收益]
-  │
-  └── 综合实际节省 = (首期原价 - 首期折后) + 次期实际节省`,
-    workedExample: (t: string, p: number, gb: number, m: string) => `针对《${t}》的折扣核销进行实际演算：
+    workflowSteps: (t: string, c: string, p: number, gb: number, m: string): WorkflowStepItem[] => [
+      {
+        name: '核实优惠代码的续费属性 (Recurring vs One-time)',
+        description: '在结账收银台输入代码，观察折扣明细是否明确标注“循环生效”还是“首期专享”。',
+        action: '若为首期一次性优惠，次期预算必须按无折扣全额原价独立入账'
+      },
+      {
+        name: '执行叠加次序与支付手续费精准演算',
+        description: '标准扣减次序：先扣减固定代金券，再按比例折扣打折，最后加上支付网关固定处理费。',
+        action: `实付 = max(0, 票面价 - 代金券) × 比例折扣 + 网关费用，核对无误后再扫码付款`
+      },
+      {
+        name: '计算真实跨期年化平摊成本',
+        description: '两期年均成本 = (首期折后实付 + 次期原价实付) / 2，理性剔除侥幸心理。',
+        action: '若两期均价超过同类竞品常规价格，说明优惠码仅为诱导拉新手段'
+      }
+    ],
+    workedExample: (t: string, p: number, gb: number, m: string) => 
+`针对《${t}》的折扣核销进行实际演算：
 1. 结算叠加演算：套餐原价 ¥${p * 10} 元/年，平台提供“立减 20 元”代金券与“首期 85 折”代码；
-2. 基础标价扣减：$${p * 10} - 20 = ${p * 10 - 20}$ 元，叠加 85 折后实付 $(${p * 10 - 20}) \\times 0.85 =$ **¥${((p * 10 - 20) * 0.85).toFixed(1)} 元**；
+2. 基础标价扣减：¥${p * 10} - 20 = ¥${p * 10 - 20} 元，叠加 85 折后实付 (¥${p * 10 - 20}) × 0.85 = **¥${((p * 10 - 20) * 0.85).toFixed(1)} 元**；
 3. 续费核实：由于该代码为首期专属，第二年续费恢复为原价 ¥${p * 10} 元；
-4. 两期年均真实支出实为 $(${((p * 10 - 20) * 0.85).toFixed(1)} + ${p * 10}) / 2 =$ **¥${((((p * 10 - 20) * 0.85) + p * 10) / 2).toFixed(1)} 元/年**，理性消除了“以后每年都只要八十几元”的错误幻想。`,
-    boundaryRule: (t: string) => `折扣核销定理：凡是要求“升级至更高两档套餐才能满足优惠券满减门槛”的活动，若额外掏出的现金超过优惠面额，严禁参与凑单；一次性首单优惠不得作为长周期预算基准。`
+4. 两期年均真实支出实为 (¥${((p * 10 - 20) * 0.85).toFixed(1)} + ¥${p * 10}) / 2 = **¥${((((p * 10 - 20) * 0.85) + p * 10) / 2).toFixed(1)} 元/年**，理性消除了“以后每年都只要八十几元”的错误幻想。`,
+    boundaryRule: (t: string) => 
+      `折扣核销定理：凡是要求“升级至更高两档套餐才能满足优惠券满减门槛”的活动，若额外掏出的现金超过优惠面额，严禁参与凑单；一次性首单优惠不得作为长周期预算基准。`
   },
 
   // 视角 7: 本地 DNS 防投毒与 Fake-IP 拓扑
   {
     tag: '本地 DNS 防投毒与 Fake-IP 拓扑',
-    conceptGen: (t: string, c: string) => `探讨“**${t}**”的技术底层，必须将目光聚焦于本地网络解析与路由拓扑的纯净度上。在集群《${c}》的实际网络环境中，普通宽带环境中的本地运营商递归 DNS 极易对跨国访问发起投毒抢答；而在客户端配置中，若未正确启用 Fake-IP 模式或远程代理代解，本地明文请求会导致连接频频被阻断。构建健壮、抗污染的本地分流拓扑，是实现端到端稳定性的基石。`,
+    verdictGen: (t: string, c: string, p: number, gb: number, m: string) => 
+      `针对“${t}”，核心结论是：<strong>算清账目更要守住安全底线，开启 Fake-IP 模式并做本地 DNS 分流是必不可少的防御手段</strong>。杜绝远端 DNS 污染与递归解析延迟，同时避免敏感域名的查询请求裸奔泄漏给本地网络运营商或公司内网审计。`,
+    angleIntro: (t: string, c: string) => 
+      `从**本地 DNS 防投毒与 Fake-IP 拓扑架构**切入，在《${c}》的通信链路中，必须开启 Fake-IP 模式并做本地 DNS 分流，彻底消除运营商劫持与远程解析延迟，守住稳定与隐私底线。`,
     tableTitle: (t: string) => `针对《${t}》的本地 DNS 解析模式与分流泄露防范表`,
     tableHeaders: ['DNS 解析模式', '工作运行原理', '抗运营商投毒能力', '首次查询延迟', '防泄漏安全表现', '配置与适用建议'],
     tableRows: (p: number, gb: number, m: string) => [
@@ -268,69 +319,79 @@ const perspectiveConfigs = [
       ['加密 DNS (DoH / DoT)', '基于 TLS/HTTPS 443 加密传输', '极佳 (运营商无法篡改响应)', '稍高 (需先完成 TLS 握手)', '优异，防止运营商劫持', '适合作为客户端 Fallback 兜底 DNS'],
       ['远端代解 (Remote Proxy DNS)', '将域名直接封装在协议包由节点解析', '最高 (与目标服务器同源)', '取决于节点往返延迟', '完全杜绝本地 DNS 污染', '针对被污染阻断的境外网站强制开启']
     ],
-    algorithm: (t: string, c: string, p: number, gb: number, m: string) => `[步骤一：排查本地 DNS 泄漏与污染状态]
-  │
-  ├── 1. 使用检测工具查看连接代理后的 DNS 服务器归属地
-  └── 2. 若显示本地国内运营商 IP ➔ 判定为存在 DNS 泄露风险
-  │
-  ▼
-  [步骤二：配置客户端 Fake-IP 与透明代解机制]
-  │
-  ├── 在配置文件中开启 enhanced-mode: fake-ip 模式
-  └── 国内域名走 Direct 并在本地解析，境外域名交由远端节点代解
-  │
-  ▼
-  [步骤三：刷新本地缓存并验证连通率]
-  │
-  └── 执行 ipconfig /flushdns，验证海外域名 0 延迟秒开`,
-    workedExample: (t: string, p: number, gb: number, m: string) => `针对《${t}》的本地 DNS 拓扑进行实操演算：
-1. 抓包排查：发现该用户的客户端使用了传统的本地直连解析，向本地电信 DNS 查询境外服务器，收到了被污染的伪造 IP（127.0.0.1）；
-2. 拓扑优化：用户在 Clash 中开启 **Fake-IP 模式**，并将境外分流规则强制绑定至远端节点代解；
+    workflowSteps: (t: string, c: string, p: number, gb: number, m: string): WorkflowStepItem[] => [
+      {
+        name: '排查本地 DNS 泄漏与污染状态',
+        description: '连接代理后，访问在线 DNS 泄漏测试工具，观察探测到的 DNS 服务器是否包含本地国内运营商 IP。',
+        action: '若显示为国内运营商 IP，判定存在 DNS 泄漏风险，境外域名随时可能被劫持'
+      },
+      {
+        name: '配置客户端 Fake-IP 与透明代解机制',
+        description: '在客户端配置中将 enhanced-mode 设为 fake-ip，将境外域名解析彻底剥离出本地环境。',
+        action: '国内域名保留本地 Direct 直连解析，确保爱奇艺等流媒体 CDN 就近接入'
+      },
+      {
+        name: '刷新本地网络缓存并验证连通率',
+        description: '在终端执行 ipconfig /flushdns，重新测试跨国目标域名的握手耗时与丢包率。',
+        action: '验证海外域名实现 0ms 本地瞬时响应，解析成功率达到 100%'
+      }
+    ],
+    workedExample: (t: string, p: number, gb: number, m: string) => 
+`针对《${t}》的本地 DNS 拓扑进行实操演算：
+1. 抓包排查：发现该用户的客户端使用了传统的本地直连解析，向本地运营商 DNS 查询境外服务器，收到了被污染的伪造 IP（127.0.0.1）；
+2. 拓扑优化：用户在客户端开启 **Fake-IP 模式**，并将境外分流规则强制绑定至远端节点代解；
 3. 成果检验：DNS 响应延迟从原本的 120ms 下降至 **0ms 瞬时返回**，境外网站连接成功率从 55% 飙升至 **100%**，零成本解决了被运营商劫持的隐性网络故障。`,
-    boundaryRule: (t: string) => `本地网络准则：严禁在未开启防污染 Fake-IP 或远程代解的环境下运行核心业务；任何将国内全部流量无脑走代理导致 DNS 错乱的配置，均属于严重不合规网络拓扑。`
+    boundaryRule: (t: string) => 
+      `本地网络准则：严禁在未开启防污染 Fake-IP 或远程代解的环境下运行核心业务；任何将国内全部流量无脑走代理导致 DNS 错乱的配置，均属于严重不合规网络拓扑。`
   }
 ];
 
 export function enhanceSpecWithTitleContext(
   baseSpec: DomainSpec,
   art: { title: string; url: string; clusterId: string },
-  clusterTitle: string
+  clusterTitle: string,
+  articleIndexInCluster: number = 0
 ): DomainSpec {
   const t = art.title;
   const seed = hashSeed(t);
   
-  // 核心改动：利用 clusterId 的哈希叠加标题哈希，在 8 个独立视角中精确轮转
-  // 确保同集群兄弟文章分流到不同视角
+  // 严格根据集群内文章序号进行步长为 2 的无冲突轮转，彻底消除同集群兄弟文章的视角碰撞
   const clusterSeed = hashSeed(art.clusterId);
-  const perspectiveIdx = (clusterSeed + (seed % 8)) % 8;
+  const perspectiveIdx = (clusterSeed + Math.max(0, articleIndexInCluster) * 2) % 8;
   const config = perspectiveConfigs[perspectiveIdx];
 
   const p = 14 + (seed % 16); // ¥14 ~ ¥29
   const gb = 60 + ((seed % 8) * 30); // 60GB ~ 270GB
   const multiplier = (1.5 + ((seed % 4) * 0.5)).toFixed(1); // 1.5x ~ 3.0x
 
-  // 1. 动态生成各不相同的 AnswerFirst
-  const answerFirst = `针对“${t}”，核心分析结论是：<strong>必须立足《${clusterTitle}》的物理交付事实与真实法币支出，从【${config.tag}】维度切入进行穿透核验</strong>。坚决摒弃盲目追求极低账面折扣的侥幸心理，以首月最小化实付控制试错敞口，在确认核心网络任务完全可用后方可逐步确立长期方案。`;
+  // 1. 生成结合具体标题、集群与视角的 AnswerFirst 核心结论
+  const answerFirst = config.verdictGen(t, clusterTitle, p, gb, multiplier);
 
-  // 2. 生成该视角专属的 Concept Intro
-  const concept = config.conceptGen(t, clusterTitle);
+  // 2. 深度结合该序号专属的切入段落与 baseSpec 的领域概念
+  const angleIntro = config.angleIntro(t, clusterTitle);
+  const concept = `聚焦 **${t}** 的实际应用场景，必须立足《${clusterTitle}》的物理交付事实与客观约束。\n\n${angleIntro}\n\n${baseSpec.concept}`;
 
-  // 3. 生成该视角专属的 Table
+  // 3. 采用该序号对应的专属视角表格
   const tableTitle = config.tableTitle(t);
   const tableHeaders = config.tableHeaders;
   const tableRows = config.tableRows(p, gb, multiplier);
 
-  // 4. 生成该视角专属的 Algorithm
-  const algorithm = config.algorithm(t, clusterTitle, p, gb, multiplier);
+  // 4. 采用该序号对应的专属推导工作流
+  const workflowSteps = config.workflowSteps(t, clusterTitle, p, gb, multiplier);
 
-  // 5. 生成该视角专属的 Worked Example
+  // 5. 采用该序号对应的专属算例与边界准则
   const workedExample = config.workedExample(t, p, gb, multiplier);
-
-  // 6. 生成该视角专属的 Boundary Rule
   const boundaryRule = config.boundaryRule(t);
 
-  // 7. 对 baseSpec 中的 pitfalls 和 faqs 进行确定性哈希打乱重组
-  const shuffledPitfalls = [...baseSpec.pitfalls].sort((a, b) => {
+  // 6. 为 baseSpec 的反例注入风控评级与避坑对策，并打乱
+  const enrichedPitfalls: PitfallItem[] = baseSpec.pitfalls.map((item, idx) => ({
+    title: item.title,
+    desc: item.desc,
+    level: idx === 0 ? '高危' : (idx === 1 ? '中危' : '常踩'),
+    action: item.action || '坚持以单月低首付验证 2~3 个周期，跨越高峰期稳定可用后再考虑长期续费。'
+  }));
+
+  const shuffledPitfalls = [...enrichedPitfalls].sort((a, b) => {
     return (hashSeed(a.title + t) % 10) - (hashSeed(b.title + t) % 10);
   });
 
@@ -340,14 +401,14 @@ export function enhanceSpecWithTitleContext(
 
   return {
     ...baseSpec,
-    answerFirst: answerFirst,
-    concept: concept,
-    tableTitle: tableTitle,
-    tableHeaders: tableHeaders,
-    tableRows: tableRows,
-    algorithm: algorithm,
-    workedExample: workedExample,
-    boundaryRule: boundaryRule,
+    answerFirst,
+    concept,
+    tableTitle,
+    tableHeaders,
+    tableRows,
+    workflowSteps,
+    workedExample,
+    boundaryRule,
     pitfalls: shuffledPitfalls,
     faqs: shuffledFaqs
   };

@@ -2,7 +2,10 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { rawClusters } from './raw-topics.js';
 import { rawArticles } from './raw-articles.js';
+import { DomainSpec } from './domains/types.js';
+import { enhanceSpecWithTitleContext } from './domain-enhancer.js';
 
+// 导入全部 13 个领域的专业生成模块
 import { getBudgetSpec } from './domains/budget.js';
 import { getMonthlySpec } from './domains/monthly.js';
 import { getAnnualSpec } from './domains/annual.js';
@@ -16,38 +19,41 @@ import { getBrandsSpec } from './domains/brands.js';
 import { getBuyingChecksSpec } from './domains/buying-checks.js';
 import { getOffersSpec } from './domains/offers.js';
 import { getKnowledgeSpec } from './domains/knowledge.js';
-import { DomainSpec } from './domains/types.js';
-import { enhanceSpecWithTitleContext } from './domain-enhancer.js';
 
-console.log('=== 启动 26 大二级专题完全差异化·416 篇专文深度独立构建系统 ===\n');
 
-const CONTENT_DIR = path.resolve('content');
 
 function ensureWrite(relPath: string, content: string) {
-  const fullPath = path.join(CONTENT_DIR, relPath);
-  const dir = path.dirname(fullPath);
-  if (!fs.existsSync(dir)) {
-    fs.mkdirSync(dir, { recursive: true });
-  }
+  const fullPath = path.resolve('content', relPath);
+  fs.mkdirSync(path.dirname(fullPath), { recursive: true });
   fs.writeFileSync(fullPath, content, 'utf-8');
 }
 
-function getSpecForArticle(secondaryId: string, art: { title: string; url: string; clusterId: string }): DomainSpec {
-  if (secondaryId.startsWith('budget-')) return getBudgetSpec(secondaryId, art);
-  if (secondaryId.startsWith('monthly-')) return getMonthlySpec(secondaryId, art);
-  if (secondaryId.startsWith('annual-')) return getAnnualSpec(secondaryId, art);
-  if (secondaryId.startsWith('discount-')) return getDiscountsSpec(secondaryId, art);
-  if (secondaryId.startsWith('renewal-')) return getRenewalSpec(secondaryId, art);
-  if (secondaryId.startsWith('plans-')) return getPlansSpec(secondaryId, art);
-  if (secondaryId.startsWith('usage-')) return getUsageSpec(secondaryId, art);
-  if (secondaryId.startsWith('low-budget-')) return getLowBudgetSpec(secondaryId, art);
-  if (secondaryId.startsWith('high-data-')) return getHighDataSpec(secondaryId, art);
-  if (secondaryId.startsWith('brands-')) return getBrandsSpec(secondaryId, art);
-  if (secondaryId.startsWith('buying-checks-')) return getBuyingChecksSpec(secondaryId, art);
-  if (secondaryId.startsWith('offers-')) return getOffersSpec(secondaryId, art);
-  if (secondaryId.startsWith('knowledge-')) return getKnowledgeSpec(secondaryId, art);
-  
-  return getBudgetSpec('budget-cost-model', art);
+function getSpecForArticle(primarySlug: string, secondaryId: string, art: any): DomainSpec {
+  switch (primarySlug) {
+    case 'budget': return getBudgetSpec(secondaryId, art);
+    case 'monthly': return getMonthlySpec(secondaryId, art);
+    case 'annual': return getAnnualSpec(secondaryId, art);
+    case 'discounts': return getDiscountsSpec(secondaryId, art);
+    case 'renewal': return getRenewalSpec(secondaryId, art);
+    case 'plans': return getPlansSpec(secondaryId, art);
+    case 'usage': return getUsageSpec(secondaryId, art);
+    case 'low-budget': return getLowBudgetSpec(secondaryId, art);
+    case 'high-data': return getHighDataSpec(secondaryId, art);
+    case 'brands': return getBrandsSpec(secondaryId, art);
+    case 'buying-checks': return getBuyingChecksSpec(secondaryId, art);
+    case 'offers': return getOffersSpec(secondaryId, art);
+    case 'knowledge': return getKnowledgeSpec(secondaryId, art);
+    default: return getBudgetSpec('budget-cost-model', art);
+  }
+}
+
+// 按 clusterId 对文章进行分组索引，保证同集群内部 4 篇兄弟文章严格轮转不同分析视角
+const clusterArticlesMap = new Map<string, any[]>();
+for (const art of rawArticles) {
+  if (!clusterArticlesMap.has(art.clusterId)) {
+    clusterArticlesMap.set(art.clusterId, []);
+  }
+  clusterArticlesMap.get(art.clusterId)!.push(art);
 }
 
 let generatedCount = 0;
@@ -61,12 +67,37 @@ for (const art of rawArticles) {
   const secondaryNode = rawClusters.find(c => c.id === secondaryId);
   const primaryNode = rawClusters.find(c => c.id === primarySlug);
 
-  const rawSpec = getSpecForArticle(secondaryId || primarySlug, art);
-  const spec = enhanceSpecWithTitleContext(rawSpec, art, clusterNode?.title || '核心集群');
+  const siblingArticles = clusterArticlesMap.get(art.clusterId) || [];
+  const articleIndexInCluster = siblingArticles.findIndex(a => a.url === art.url);
+
+  const rawSpec = getSpecForArticle(primarySlug, secondaryId || primarySlug, art);
+  const spec = enhanceSpecWithTitleContext(rawSpec, art, clusterNode?.title || '核心集群', articleIndexInCluster);
 
   const tableHeaderMarkup = `| ${spec.tableHeaders.join(' | ')} |\n| ${spec.tableHeaders.map(() => '---').join(' | ')} |`;
   const tableRowsMarkup = spec.tableRows.map(row => `| ${row.join(' | ')} |`).join('\n');
-  const pitfallsMarkup = spec.pitfalls.map((p, idx) => `### 反例 ${idx + 1}：${p.title}\n${p.desc}\n`).join('\n');
+  
+  const workflowStepsMarkup = (spec.workflowSteps && spec.workflowSteps.length > 0)
+    ? `<WorkflowSteps 
+  title="针对《${art.title.replace(/'/g, '’').replace(/"/g, '”')}》的量化核对工作流"
+  :steps="[
+${spec.workflowSteps.map(s => `    {
+      name: '${s.name.replace(/'/g, '’').replace(/"/g, '”')}',
+      description: '${s.description.replace(/'/g, '’').replace(/"/g, '”')}',
+      action: '${(s.action || '').replace(/'/g, '’').replace(/"/g, '”')}'
+    }`).join(',\n')}
+  ]" 
+/>`
+    : `\`\`\`\n${spec.algorithm}\n\`\`\``;
+
+  const pitfallsMarkup = `<PitfallCard :items="[
+${spec.pitfalls.map(p => `  {
+    title: '${p.title.replace(/'/g, '’').replace(/"/g, '”')}',
+    desc: '${p.desc.replace(/'/g, '’').replace(/"/g, '”')}',
+    level: '${p.level || '高危'}',
+    action: '${(p.action || '').replace(/'/g, '’').replace(/"/g, '”')}'
+  }`).join(',\n')}
+]" />`;
+
   const faqMarkup = spec.faqs.map(f => `  {
     question: '${f.q.replace(/'/g, '’').replace(/"/g, '”')}',
     answer: '${f.a.replace(/'/g, '’').replace(/"/g, '”')}',
@@ -81,10 +112,10 @@ description: 针对《${art.title}》的专业预算分析与决策指南。梳�
 # ${art.title}
 
 <AnswerFirst>
-<template #title>核心结论：${art.title}</template>
+<template #title>${art.title}</template>
 ${spec.answerFirst}
 <template #conditions>
-本文基于公开网络服务计费模型与纯数学推导，所有演算均经过严格的业务边界核验。
+预算与性能推导基于网络工程测算模型与十进制精确计费口径，不采集用户隐私。
 </template>
 </AnswerFirst>
 
@@ -107,9 +138,7 @@ ${tableRowsMarkup}
 
 针对“${art.title}”，推荐遵循以下标准工作流进行手工复算与核对：
 
-\`\`\`
-${spec.algorithm}
-\`\`\`
+${workflowStepsMarkup}
 
 ### 3.1 典型算例深入拆解
 
@@ -123,9 +152,10 @@ ${spec.boundaryRule}
 
 ## 4. 常见反例与边界防坑提示
 
-在落实“${art.title}”的过程中，切忌陷入以下典型思维陷阱：
+在落实“${art.title}”的过程中，必须重点排查以下认知误区与典型套路：
 
 ${pitfallsMarkup}
+
 ---
 
 ## 5. 常见问题解答 (FAQ)
@@ -173,4 +203,4 @@ ${faqMarkup}
   generatedCount++;
 }
 
-console.log(`✔ 26 大二级专题全面覆盖完成，416 篇专文全部重新独立生成，共 ${generatedCount} 篇！`);
+console.log(`\n✔ 26 大二级专题全面覆盖完成，416 篇专文全部重新独立生成，共 ${generatedCount} 篇！`);
