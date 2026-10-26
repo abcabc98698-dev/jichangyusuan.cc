@@ -199,6 +199,22 @@ body {
   gap: 0.5rem;
 }
 
+/* 顶部导航头像样式（精致圆形微投影） */
+.VPNavBarTitle .logo {
+  border-radius: 50% !important;
+  object-fit: cover !important;
+  border: 1.5px solid var(--vp-c-brand-1) !important;
+  box-shadow: 0 1px 4px rgba(2, 132, 199, 0.25) !important;
+  width: 28px !important;
+  height: 28px !important;
+  margin-right: 8px !important;
+  transition: transform 0.25s ease !important;
+}
+
+.VPNavBarTitle:hover .logo {
+  transform: rotate(8deg) scale(1.1) !important;
+}
+
 /* 排除非正文区域被 Pagefind 污染 */
 .VPNav, .VPSidebar, .VPFooter, .VPLocalNav {
   /* pagefind default ignore */

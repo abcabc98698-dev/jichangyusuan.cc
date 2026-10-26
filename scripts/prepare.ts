@@ -61,4 +61,12 @@ for (const node of Object.values(registry) as any[]) {
   }
 }
 
-console.log(`✔ 已将 ${publishedCount} 个 published 状态的页面安全同步至 site/generated/`);
+// 同步静态公共资源 (头像、favicon 等)
+const PUBLIC_SRC = path.resolve('site/public');
+const PUBLIC_DEST = path.resolve('site/generated/public');
+if (fs.existsSync(PUBLIC_SRC)) {
+  fs.mkdirSync(PUBLIC_DEST, { recursive: true });
+  fs.cpSync(PUBLIC_SRC, PUBLIC_DEST, { recursive: true });
+}
+
+console.log(`✔ 已将 ${publishedCount} 个 published 状态的页面与静态资源安全同步至 site/generated/`);

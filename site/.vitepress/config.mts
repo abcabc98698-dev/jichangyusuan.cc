@@ -99,7 +99,10 @@ export default defineConfig({
   head: [
     ['meta', { name: 'viewport', content: 'width=device-width, initial-scale=1.0' }],
     ['meta', { name: 'theme-color', content: '#0284c7' }],
-    ['link', { rel: 'icon', href: '/favicon.ico' }],
+    ['link', { rel: 'icon', type: 'image/jpeg', href: '/avatar.jpg' }],
+    ['link', { rel: 'shortcut icon', href: '/favicon.ico' }],
+    ['link', { rel: 'apple-touch-icon', href: '/avatar.jpg' }],
+    ['meta', { property: 'og:image', content: 'https://jichangyusuan.cc/avatar.jpg' }],
     ['meta', { property: 'og:site_name', content: '机场预算' }],
     ['meta', { property: 'og:type', content: 'website' }]
   ],
@@ -121,6 +124,7 @@ export default defineConfig({
 
   themeConfig: {
     siteTitle: '机场预算',
+    logo: '/avatar.jpg',
     
     // 固定顶部顺序：首页｜预算计算｜月付比较｜年付分析｜折扣核算｜续费成本｜更多专题 ▾
     nav: [
