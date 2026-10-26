@@ -1,0 +1,78 @@
+# ==============================================================================
+# Apache Configuration for jichangyusuan.cc (机场预算)
+# 静态托管、严格 404、防目录遍历与缓存安全策略
+# ==============================================================================
+
+# 1. 默认首页与目录索引
+DirectoryIndex index.html
+Options -Indexes -MultiViews
+
+# 2. 字符集与默认语言
+AddDefaultCharset UTF-8
+DefaultLanguage zh-CN
+
+# 3. 严格 404 处理（严禁 SPA 200 全路径重定向）
+ErrorDocument 404 /404.html
+
+# 4. 重写引擎与 URL 规范化
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+  RewriteBase /
+
+  # 强制 HTTPS
+  RewriteCond %{HTTPS} off
+  RewriteRule ^(.*)$ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+
+  # 规范化：去除 www 前缀
+  RewriteCond %{HTTP_HOST} ^www\.jichangyusuan\.cc$ [NC]
+  RewriteRule ^(.*)$ https://jichangyusuan.cc/$1 [L,R=301]
+
+  # 规范化：目录访问自动追加斜杠（保证相对资源路径解析正确）
+  RewriteCond %{REQUEST_FILENAME} -d
+  RewriteCond %{REQUEST_URI} !/$
+  RewriteRule ^(.*)$ https://%{HTTP_HOST}/$1/ [L,R=301]
+
+  # 干净 URL 支持：将 /path 映射为 /path/index.html 或 /path.html
+  RewriteCond %{REQUEST_FILENAME} !-f
+  RewriteCond %{REQUEST_FILENAME} !-d
+  RewriteCond %{REQUEST_FILENAME}.html -f
+  RewriteRule ^(.*)$ $1.html [L]
+</IfModule>
+
+# 5. 安全响应头
+<IfModule mod_headers.c>
+  Header always set X-Content-Type-Options "nosniff"
+  Header always set X-Frame-Options "SAMEORIGIN"
+  Header always set X-XSS-Protection "1; mode=block"
+  Header always set Referrer-Policy "strict-origin-when-cross-origin"
+  Header always set Permissions-Policy "geolocation=(), microphone=(), camera=()"
+</IfModule>
+
+# 6. 缓存控制策略
+<IfModule mod_expires.c>
+  ExpiresActive On
+  ExpiresDefault "access plus 1 hour"
+
+  # HTML 页面：强制重新验证（保证用户及时获取更新）
+  ExpiresByType text/html "access plus 0 seconds"
+
+  # 带内容哈希的静态资源：长效缓存 1 年
+  ExpiresByType text/css "access plus 1 year"
+  ExpiresByType application/javascript "access plus 1 year"
+  ExpiresByType application/wasm "access plus 1 year"
+  ExpiresByType image/svg+xml "access plus 1 year"
+  ExpiresByType image/png "access plus 1 year"
+  ExpiresByType image/jpeg "access plus 1 year"
+  ExpiresByType image/webp "access plus 1 year"
+  ExpiresByType font/woff2 "access plus 1 year"
+
+  # Pagefind 索引入口：短缓存或重验证
+  <FilesMatch "^pagefind\.js$">
+    Header set Cache-Control "no-cache, must-revalidate"
+  </FilesMatch>
+</IfModule>
+
+# 7. 禁止访问敏感目录和文件
+<FilesMatch "^\.(env|git|htaccess|htpasswd|jsonl)$">
+  Require all denied
+</FilesMatch>

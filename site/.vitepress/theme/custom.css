@@ -1,0 +1,109 @@
+:root {
+  --vp-c-brand-1: #0284c7;
+  --vp-c-brand-2: #0369a1;
+  --vp-c-brand-3: #075985;
+  --vp-c-brand-soft: #e0f2fe;
+
+  --vp-font-family-base: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  --vp-font-family-mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
+
+  --vp-sidebar-width: 280px;
+  --vp-c-bg: #ffffff;
+  --vp-c-bg-alt: #f8fafc;
+  --vp-c-bg-soft: #f1f5f9;
+
+  --vp-c-text-1: #0f172a;
+  --vp-c-text-2: #334155;
+  --vp-c-text-3: #64748b;
+
+  --vp-c-border: #e2e8f0;
+  --vp-c-divider: #f1f5f9;
+}
+
+/* 品牌化简白背景与克制视觉 */
+body {
+  background-color: var(--vp-c-bg);
+  color: var(--vp-c-text-1);
+}
+
+.VPDoc {
+  padding-bottom: 3rem;
+}
+
+/* 标题层次与可读性 */
+.vp-doc h1 {
+  font-size: 2rem;
+  font-weight: 800;
+  color: #0f172a;
+  margin-top: 1rem;
+  margin-bottom: 1.25rem;
+  letter-spacing: -0.02em;
+}
+
+.vp-doc h2 {
+  font-size: 1.45rem;
+  font-weight: 700;
+  color: #1e293b;
+  margin-top: 2.25rem;
+  margin-bottom: 1rem;
+  border-bottom: 1px solid #e2e8f0;
+  padding-bottom: 0.4rem;
+}
+
+.vp-doc h3 {
+  font-size: 1.15rem;
+  font-weight: 600;
+  color: #334155;
+  margin-top: 1.75rem;
+  margin-bottom: 0.75rem;
+}
+
+.vp-doc p, .vp-doc li {
+  line-height: 1.75;
+  color: #334155;
+}
+
+/* 强调表格层次，仿 Numbers 简洁报表 */
+.vp-doc table {
+  width: 100%;
+  display: table;
+  border-collapse: collapse;
+  margin: 1.5rem 0;
+  font-size: 0.875rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.vp-doc th {
+  background: #f8fafc;
+  color: #1e293b;
+  font-weight: 600;
+  padding: 0.65rem 0.85rem;
+  border: 1px solid #e2e8f0;
+  text-align: left;
+}
+
+.vp-doc td {
+  padding: 0.65rem 0.85rem;
+  border: 1px solid #f1f5f9;
+  color: #334155;
+}
+
+.vp-doc tr:nth-child(2n) {
+  background-color: #fafcff;
+}
+
+.vp-doc blockquote {
+  border-left: 4px solid #0284c7;
+  background: #f0f9ff;
+  color: #334155;
+  padding: 0.75rem 1.25rem;
+  border-radius: 0 6px 6px 0;
+  margin: 1.25rem 0;
+}
+
+/* 排除非正文区域被 Pagefind 污染 */
+.VPNav, .VPSidebar, .VPFooter, .VPLocalNav {
+  /* pagefind default ignore */
+}
