@@ -1,0 +1,18 @@
+User-agent: *
+Allow: /
+
+# Explicit Declarations for Major Search Engines
+User-agent: Googlebot
+Allow: /
+
+User-agent: Bingbot
+Allow: /
+
+User-agent: Baiduspider
+Allow: /
+
+User-agent: Yisouspider
+Allow: /
+
+# Sitemap Index Declaration
+Sitemap: https://jichangyusuan.cc/sitemap.xml

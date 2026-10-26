@@ -9,7 +9,7 @@
     </p>
 
     <div class="mcta-action-area">
-      <a :href="handoffUrl" target="_blank" rel="noopener noreferrer" class="mcta-button">
+      <a :href="handoffUrl" target="_blank" rel="nofollow sponsored noopener" class="mcta-button">
         前往主站机场榜一 {{ buttonText ? `(${buttonText})` : '' }} ↗
       </a>
       <span class="mcta-disclosure">

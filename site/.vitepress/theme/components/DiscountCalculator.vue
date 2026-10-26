@@ -74,7 +74,7 @@
       </div>
 
       <div class="calc-cta-bridge">
-        <a :href="handoffUrl" target="_blank" rel="noopener noreferrer" class="cta-link-btn">
+        <a :href="handoffUrl" target="_blank" rel="nofollow sponsored noopener" class="cta-link-btn">
           前往主站「机场榜一」核验现行有效优惠码与历史价格 →
         </a>
       </div>

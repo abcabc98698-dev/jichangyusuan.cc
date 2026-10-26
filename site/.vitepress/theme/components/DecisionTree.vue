@@ -15,7 +15,7 @@
             <strong>建议动作：</strong>{{ node.action }}
           </div>
           <div v-if="node.link" class="step-link">
-            <a :href="node.link.url">{{ node.link.text }} →</a>
+            <a :href="node.link.url" :target="node.link.url.startsWith('http') ? '_blank' : undefined" :rel="node.link.url.startsWith('http') ? 'nofollow sponsored noopener' : undefined">{{ node.link.text }} →</a>
           </div>
         </div>
       </div>

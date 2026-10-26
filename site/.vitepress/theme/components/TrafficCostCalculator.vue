@@ -60,7 +60,7 @@
       </div>
 
       <div class="calc-cta-bridge">
-        <a :href="handoffUrl" target="_blank" rel="noopener noreferrer" class="cta-link-btn">
+        <a :href="handoffUrl" target="_blank" rel="nofollow sponsored noopener" class="cta-link-btn">
           前往主站「机场榜一」查看各家大流量套餐的倍率与限速实测 →
         </a>
       </div>

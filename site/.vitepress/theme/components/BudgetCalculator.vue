@@ -91,7 +91,7 @@
       </div>
 
       <div class="calc-cta-bridge">
-        <a :href="handoffUrl" target="_blank" rel="noopener noreferrer" class="cta-link-btn">
+        <a :href="handoffUrl" target="_blank" rel="nofollow sponsored noopener" class="cta-link-btn">
           带着预算去主站「机场榜一」选购符合条件的套餐 →
         </a>
       </div>

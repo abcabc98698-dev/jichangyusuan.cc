@@ -61,6 +61,33 @@ for (const node of Object.values(registry) as any[]) {
   }
 }
 
+// 同步核心支撑信任页面（关于、方法论、隐私、条款、披露，不计入 560 核心规划节点）
+const supportPages = ['about', 'methodology', 'privacy', 'terms', 'disclosure'];
+let supportCount = 0;
+for (const sp of supportPages) {
+  const src = path.join(CONTENT_DIR, sp, 'index.md');
+  if (fs.existsSync(src)) {
+    const dest = path.join(GENERATED_DIR, sp, 'index.md');
+    fs.mkdirSync(path.dirname(dest), { recursive: true });
+    let content = fs.readFileSync(src, 'utf-8');
+    if (content.startsWith('---')) {
+      const parts = content.split('---');
+      if (parts.length >= 3) {
+        const frontmatter = parts[1];
+        const body = parts.slice(2).join('---');
+        content = `---${frontmatter}---\n\n<div data-pagefind-body>\n\n${body.trim()}\n\n</div>\n`;
+      }
+    } else {
+      content = `<div data-pagefind-body>\n\n${content}\n\n</div>\n`;
+    }
+    fs.writeFileSync(dest, content, 'utf-8');
+    supportCount++;
+  }
+}
+if (supportCount > 0) {
+  console.log(`✔ 已同步 ${supportCount} 个 E-E-A-T 核心支撑与合规页面至 site/generated/`);
+}
+
 // 同步静态公共资源 (头像、favicon 等)
 const PUBLIC_SRC = path.resolve('site/public');
 const PUBLIC_DEST = path.resolve('site/generated/public');

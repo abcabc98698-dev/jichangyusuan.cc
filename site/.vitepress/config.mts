@@ -73,6 +73,27 @@ function buildSidebarConfig() {
   return sidebarConfig;
 }
 
+const PRIMARY_NAME_MAP: Record<string, string> = {
+  budget: '预算计算',
+  monthly: '月付比较',
+  annual: '年付分析',
+  discounts: '折扣核算',
+  renewal: '续费成本',
+  plans: '价格套餐',
+  usage: '用量案例',
+  'low-budget': '低预算方案',
+  'high-data': '大流量方案',
+  brands: '品牌数据库',
+  'buying-checks': '购买避坑',
+  offers: '优惠情报',
+  knowledge: '知识百科',
+  about: '关于我们',
+  methodology: '评测方法论',
+  privacy: '隐私政策',
+  terms: '服务条款',
+  disclosure: '商业披露'
+};
+
 export default defineConfig({
   title: '机场预算',
   titleTemplate: ':title ｜ 机场预算',
@@ -84,7 +105,14 @@ export default defineConfig({
   cleanUrls: true,
 
   sitemap: {
-    hostname: 'https://jichangyusuan.cc'
+    hostname: 'https://jichangyusuan.cc',
+    transformItems(items) {
+      const nowIso = new Date().toISOString();
+      return items.map((item) => ({
+        ...item,
+        lastmod: nowIso
+      }));
+    }
   },
 
   vite: {
@@ -108,23 +136,155 @@ export default defineConfig({
   ],
 
   transformHead({ pageData }) {
-    // 自动为每个页面动态生成自指 canonical 标签
+    // 自动为每个页面动态生成自指规范 canonical 标签，彻底避免末尾多余双斜杠
     const cleanPath = pageData.relativePath
       .replace(/index\.md$/, '')
-      .replace(/\.md$/, '');
+      .replace(/\.md$/, '')
+      .replace(/\/+$/, '');
     const canonicalUrl = `https://jichangyusuan.cc/${cleanPath ? `${cleanPath}/` : ''}`;
 
-    return [
+    const headTags: any[] = [
       ['link', { rel: 'canonical', href: canonicalUrl }],
       ['meta', { property: 'og:url', content: canonicalUrl }],
       ['meta', { property: 'og:title', content: `${pageData.title || '机场预算'} ｜ 机场预算` }],
       ['meta', { property: 'og:description', content: pageData.description || '机场预算：月付年付费用计算与套餐选择' }]
     ];
+
+    // 1. BreadcrumbList 结构化数据
+    const segments = cleanPath ? cleanPath.split('/').filter(Boolean) : [];
+    const breadcrumbItems: any[] = [
+      {
+        '@type': 'ListItem',
+        position: 1,
+        name: '首页',
+        item: 'https://jichangyusuan.cc/'
+      }
+    ];
+
+    if (segments.length > 0) {
+      const primarySeg = segments[0];
+      const primaryTitle = PRIMARY_NAME_MAP[primarySeg] || primarySeg;
+      breadcrumbItems.push({
+        '@type': 'ListItem',
+        position: 2,
+        name: primaryTitle,
+        item: `https://jichangyusuan.cc/${primarySeg}/`
+      });
+
+      if (segments.length > 1) {
+        breadcrumbItems.push({
+          '@type': 'ListItem',
+          position: 3,
+          name: pageData.title || '当前页面',
+          item: canonicalUrl
+        });
+      }
+    }
+
+    const breadcrumbSchema = {
+      '@context': 'https://schema.org',
+      '@type': 'BreadcrumbList',
+      itemListElement: breadcrumbItems
+    };
+    headTags.push(['script', { type: 'application/ld+json' }, JSON.stringify(breadcrumbSchema)]);
+
+    // 2. 首页添加 Organization & WebSite
+    if (!cleanPath) {
+      const orgAndWebSiteSchema = {
+        '@context': 'https://schema.org',
+        '@graph': [
+          {
+            '@type': 'Organization',
+            '@id': 'https://jichangyusuan.cc/#organization',
+            name: '机场预算',
+            url: 'https://jichangyusuan.cc/',
+            logo: {
+              '@type': 'ImageObject',
+              url: 'https://jichangyusuan.cc/avatar.jpg'
+            },
+            description: '专业机场预算分析与网络订阅费用精算独立知识库'
+          },
+          {
+            '@type': 'WebSite',
+            '@id': 'https://jichangyusuan.cc/#website',
+            url: 'https://jichangyusuan.cc/',
+            name: '机场预算',
+            description: '客观透明的机场预算计算与网络服务费用模型',
+            publisher: {
+              '@id': 'https://jichangyusuan.cc/#organization'
+            }
+          }
+        ]
+      };
+      headTags.push(['script', { type: 'application/ld+json' }, JSON.stringify(orgAndWebSiteSchema)]);
+    } else {
+      // 3. 内容与专题页面添加 TechArticle 结构化数据
+      const articleSchema = {
+        '@context': 'https://schema.org',
+        '@type': 'TechArticle',
+        headline: pageData.title || '机场预算指南',
+        description: pageData.description || '客观透明的机场预算与费用模型分析',
+        url: canonicalUrl,
+        inLanguage: 'zh-CN',
+        datePublished: '2026-10-26T00:00:00+08:00',
+        dateModified: new Date().toISOString(),
+        author: {
+          '@type': 'Organization',
+          name: '机场预算技术评估组',
+          url: 'https://jichangyusuan.cc/about/'
+        },
+        publisher: {
+          '@type': 'Organization',
+          name: '机场预算',
+          url: 'https://jichangyusuan.cc/',
+          logo: {
+            '@type': 'ImageObject',
+            url: 'https://jichangyusuan.cc/avatar.jpg'
+          }
+        },
+        mainEntityOfPage: {
+          '@type': 'WebPage',
+          '@id': canonicalUrl
+        }
+      };
+      headTags.push(['script', { type: 'application/ld+json' }, JSON.stringify(articleSchema)]);
+
+      // 4. 解析页面内的 FAQ 并生成 FAQPage 结构化数据
+      try {
+        const fullFilePath = path.resolve(__dirname, '../generated', pageData.relativePath);
+        if (fs.existsSync(fullFilePath)) {
+          const fileContent = fs.readFileSync(fullFilePath, 'utf8');
+          const qMatches = [...fileContent.matchAll(/question:\s*['"](.*?)['"]/g)];
+          const aMatches = [...fileContent.matchAll(/answer:\s*['"]([\s\S]*?)['"],/g)];
+          if (qMatches.length > 0 && aMatches.length > 0) {
+            const count = Math.min(qMatches.length, aMatches.length);
+            const faqSchema = {
+              '@context': 'https://schema.org',
+              '@type': 'FAQPage',
+              mainEntity: [] as any[]
+            };
+            for (let i = 0; i < count; i++) {
+              faqSchema.mainEntity.push({
+                '@type': 'Question',
+                name: qMatches[i][1],
+                acceptedAnswer: {
+                  '@type': 'Answer',
+                  text: aMatches[i][1].replace(/\\'/g, "'").trim()
+                }
+              });
+            }
+            headTags.push(['script', { type: 'application/ld+json' }, JSON.stringify(faqSchema)]);
+          }
+        }
+      } catch (_) {}
+    }
+
+    return headTags;
   },
 
   themeConfig: {
     siteTitle: '机场预算',
-    logo: '/avatar.jpg',
+    logo: { src: '/avatar.jpg', alt: '机场预算' },
     
     // 固定顶部顺序：首页｜预算计算｜月付比较｜年付分析｜折扣核算｜续费成本｜更多专题 ▾
     nav: [
@@ -157,7 +317,7 @@ export default defineConfig({
     },
 
     footer: {
-      message: '机场预算（jichangyusuan.cc） - 独立客观的费用模型与防坑知识库 ｜ 唯一选购转介主站：机场榜一（jichangbang.org）',
+      message: '机场预算（jichangyusuan.cc） - 独立客观的费用模型与防坑知识库 ｜ 唯一选购转介主站：机场榜一（jichangbang.org）<br><span style="display:inline-block;margin-top:0.35rem;font-size:0.85em;"><a href="/about/">关于我们</a> ｜ <a href="/methodology/">评测方法论</a> ｜ <a href="/privacy/">隐私政策</a> ｜ <a href="/terms/">服务条款</a> ｜ <a href="/disclosure/">商业披露</a></span>',
       copyright: 'Copyright © 2026 机场预算. 纯前端内存计算，不存储用户敏感配置.'
     }
   }

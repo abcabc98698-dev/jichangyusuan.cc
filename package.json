@@ -12,13 +12,14 @@
     "check:content": "tsx scripts/check-content.ts",
     "check:links": "tsx scripts/check-links.ts",
     "check:secrets": "tsx scripts/check-secrets.ts",
+    "check:seo": "tsx scripts/audit-seo.ts",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "build:site": "vitepress build site",
     "search:index": "pagefind --site site/dist",
     "build": "tsx scripts/build.ts",
     "preview": "vitepress preview site",
-    "check:all": "pnpm typecheck && pnpm test && pnpm check:structure && pnpm check:content && pnpm check:links && pnpm check:secrets"
+    "check:all": "pnpm typecheck && pnpm test && pnpm check:structure && pnpm check:content && pnpm check:links && pnpm check:secrets && pnpm check:seo"
   },
   "dependencies": {
     "vue": "^3.5.13"

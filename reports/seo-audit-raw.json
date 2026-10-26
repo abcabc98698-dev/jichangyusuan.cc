@@ -1,0 +1,80 @@
+{
+  "totalPages": 565,
+  "robotsTxt": {
+    "existsDist": true,
+    "existsPublic": true,
+    "contentPreview": "User-agent: *\nAllow: /\n\n# Explicit Declarations for Major Search Engines\nUser-agent: Googlebot\nAllow: /\n\nUser-agent: Bingbot\nAllow: /\n\nUser-agent: Baiduspider\nAllow: /\n\nUser-agent: Yisouspider\nAllow: "
+  },
+  "sitemap": {
+    "exists": true,
+    "totalUrls": 565,
+    "hasLastmod": true,
+    "mismatchCount": 0
+  },
+  "canonicals": {
+    "invalidCount": 0,
+    "samples": []
+  },
+  "noindexCount": 0,
+  "contentDepth": {
+    "under300": 0,
+    "under500": 0,
+    "minWords": 518,
+    "maxWords": 5266,
+    "avgWords": 2260
+  },
+  "duplicates": {
+    "duplicateTitlesCount": 0,
+    "duplicateTitlesSamples": [],
+    "duplicateDescriptionsCount": 0,
+    "duplicateDescriptionsSamples": [],
+    "duplicateH1sCount": 0,
+    "duplicateH1sSamples": []
+  },
+  "affiliateCompliance": {
+    "totalExternal": 592,
+    "affiliateTotal": 592,
+    "affiliateWithSponsored": 592,
+    "affiliateWithoutSponsoredCount": 0,
+    "samplesWithoutSponsored": []
+  },
+  "internalLinks": {
+    "brokenCount": 0,
+    "emptyOrHashCount": 2825,
+    "orphanPagesCount": 0,
+    "orphanPagesSamples": [],
+    "depthDistribution": {
+      "0": 1,
+      "1": 18,
+      "2": 546
+    }
+  },
+  "schema": {
+    "schemaUsage": {
+      "BreadcrumbList": 565,
+      "TechArticle": 564,
+      "FAQPage": 559
+    },
+    "pagesWithSchemaCount": 565
+  },
+  "authorAndEEAT": {
+    "pagesWithAuthorTag": 564,
+    "pagesWithDisclosure": 1,
+    "aboutUsPage": true,
+    "methodologyPage": true,
+    "privacyPage": true,
+    "termsPage": true
+  },
+  "security": {
+    "hasHttpsRewrite": true,
+    "hasHsts": true,
+    "hasXContentTypeOptions": true,
+    "hasXFrameOptions": true,
+    "hasReferrerPolicy": true
+  },
+  "mobile": {
+    "missingViewport": 0,
+    "imagesTotal": 565,
+    "imagesWithoutAlt": 0
+  }
+}

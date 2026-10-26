@@ -13,8 +13,18 @@ const perspectiveConfigs = [
   // 视角 0: 首次法币实付与收银台通道摩擦
   {
     tag: '首次法币实付与收银台通道摩擦',
-    verdictGen: (t: string, c: string, p: number, gb: number, m: string) => 
-      `针对“${t}”，核心结论是：<strong>切忌把年付折算价当成真实月花销，买网络服务必须以“首月最低实付”控制试错敞口</strong>。在第三方收银台结账前，逐项排查网关处理费、外币汇损与最低充值门槛，把不可退款的首次本金风险严格锁死在 ¥${p}～¥${p + 15} 极限以内。`,
+    verdictGen: (t: string, c: string, p: number, gb: number, m: string) => {
+      const vSeed = hashSeed(t) % 4;
+      if (vSeed === 0) {
+        return `针对“${t}”，核心结论是：<strong>切忌把年付折算价当成真实月花销，买网络服务必须以“首月最低实付”控制试错敞口</strong>。在第三方收银台结账前，逐项排查网关处理费、外币汇损与最低充值门槛，把不可退款的首次本金风险严格锁死在 ¥${p}～¥${p + 15} 极限以内。`;
+      } else if (vSeed === 1) {
+        return `评估“${t}”时，首要准则是：<strong>优先核算首次从账户划扣的净法币总额，坚决杜绝把远期账面均摊当成真实首付</strong>。务必核对收银台加收的聚合支付手续费与最低起充差额，将首期未经验证的试错敞口严格控制在 ¥${p} 左右。`;
+      } else if (vSeed === 2) {
+        return `在“${t}”的决策链条中，最关键的实操动作是：<strong>以首期单月真实实付锁定本金敞口，抵御后期可能出现的断网与服务降级风险</strong>。在完成实际测试前，避免一次性押入超过 ¥${p + 12} 元的未履约资金。`;
+      } else {
+        return `关于“${t}”，财务精算上的核心要领在于：<strong>将名义票面价与收银台实扣金额彻底区分，严格执行小额初审原则</strong>。首月建议以 ¥${p}～¥${p + 10} 档位试跑晚高峰与长连接，达标后再决定是否追加后续预算。`;
+      }
+    },
     angleIntro: (t: string, c: string) => 
       `从**现金流动性与支付收银台实付款**切入，在《${c}》的场景下，首要任务是核清支付网关手续费、跨币种汇损与不可退款敞口，拒绝任何把长期折算价混淆为当期现金支出的财务陷阱。`,
     tableTitle: (t: string) => `针对《${t}》的首次现金实付与交易摩擦审计表`,
@@ -355,9 +365,10 @@ export function enhanceSpecWithTitleContext(
   const t = art.title;
   const seed = hashSeed(t);
   
-  // 严格根据集群内文章序号进行步长为 2 的无冲突轮转，彻底消除同集群兄弟文章的视角碰撞
+  // 综合集群哈希与文章内序号，实现 8 大视角平滑均匀的伪随机分布
   const clusterSeed = hashSeed(art.clusterId);
-  const perspectiveIdx = (clusterSeed + Math.max(0, articleIndexInCluster) * 2) % 8;
+  const articleSeed = hashSeed(t);
+  const perspectiveIdx = (clusterSeed + articleIndexInCluster * 3 + (articleSeed % 7)) % 8;
   const config = perspectiveConfigs[perspectiveIdx];
 
   const p = 14 + (seed % 16); // ¥14 ~ ¥29
@@ -367,9 +378,18 @@ export function enhanceSpecWithTitleContext(
   // 1. 生成结合具体标题、集群与视角的 AnswerFirst 核心结论
   const answerFirst = config.verdictGen(t, clusterTitle, p, gb, multiplier);
 
-  // 2. 深度结合该序号专属的切入段落与 baseSpec 的领域概念
+  // 2. 深度结合多态切入句与 baseSpec 的领域概念，彻底消除同构机械模板句
   const angleIntro = config.angleIntro(t, clusterTitle);
-  const concept = `聚焦 **${t}** 的实际应用场景，必须立足《${clusterTitle}》的物理交付事实与客观约束。\n\n${angleIntro}\n\n${baseSpec.concept}`;
+  const introPatterns = [
+    `在评估“${t}”时，核心在于对照《${clusterTitle}》下的真实网络工程边界与支付履约事实。`,
+    `围绕“${t}”展开决策，首要依据是《${clusterTitle}》所圈定的网络交付条件与预算约束。`,
+    `落地“${t}”的执行方案，必须回归《${clusterTitle}》的实际承载能力与日常摩擦成本。`,
+    `分析“${t}”的投入产出比，关键在于辨析《${clusterTitle}》中的参数真实性与隐性开销。`,
+    `落实“${t}”的选型动作，需以《${clusterTitle}》的底层运行环境为硬性基准。`,
+    `针对“${t}”的场景推演，务必建立在《${clusterTitle}》的合规资费与可用性基础之上。`
+  ];
+  const selectedIntro = introPatterns[seed % introPatterns.length];
+  const concept = `${selectedIntro}\n\n${angleIntro}\n\n${baseSpec.concept}`;
 
   // 3. 采用该序号对应的专属视角表格
   const tableTitle = config.tableTitle(t);

@@ -22,10 +22,14 @@ try {
   execSync('npx vitepress build site', { stdio: 'inherit' });
 
   // 5. Pagefind 全文检索离线索引构建
-  console.log('\n[5/5] 执行 Pagefind 离线中文全文索引构建...');
+  console.log('\n[5/6] 执行 Pagefind 离线中文全文索引构建...');
   execSync('npx pagefind --site site/dist', { stdio: 'inherit' });
 
-  // 6. 产物完整性检查
+  // 6. 自动化技术 SEO 与外链合规审计
+  console.log('\n[6/6] 执行 SEO 预防性健康与出站外链合规审计...');
+  execSync('npx tsx scripts/audit-seo.ts', { stdio: 'inherit' });
+
+  // 7. 产物完整性检查
   const distDir = path.resolve('site/dist');
   const indexHtml = path.join(distDir, 'index.html');
   const pagefindDir = path.join(distDir, 'pagefind');
